@@ -1,0 +1,48 @@
+# Frontend dependencies, generated output and caches
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+*.log
+
+# .NET build and test output
+[Bb]in/
+[Oo]bj/
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+
+# IDE and user-specific settings
+.vs/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Local environment files and credentials (examples remain tracked)
+.env
+.env.*
+!.env.example
+!**/.env.example
+**/appsettings.Local.json
+**/secrets.json
+*.pfx
+*.p12
+*.key
+
+# Local SQLite data
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
