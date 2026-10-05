@@ -1,16 +1,18 @@
 # Frontend architecture direction
 
-## What exists in Phase 0
+## Current foundation (Phases 0-1)
 
-`src/main.tsx` mounts React under StrictMode and imports the minimal global reset.
+`src/main.tsx` mounts React under StrictMode and imports `styles/global.css`.
 `app/App.tsx` composes `AppProviders` with the central router. `AppProviders.tsx`
 owns one stable TanStack Query client; `router.tsx` owns route definitions outside
 React renders. Root and unknown-route messages are neutral bootstrap fallbacks.
 They are not product screens.
 
-Vite handles CSS Modules natively. No module styles, design tokens, maps, product
-components, data contracts, API client or mocks are implemented yet. dnd-kit,
-Lucide and MSW are installed as confirmed future dependencies only.
+Phase 1 adds `styles/tokens.css` and a self-hosted Inter font, both loaded by
+`global.css`. See [Design system](DESIGN_SYSTEM.md) for the visual source of truth.
+Vite handles CSS Modules natively. No module styles, maps, product components,
+data contracts, API client or mocks are implemented yet. dnd-kit, Lucide and MSW
+are installed as confirmed future dependencies only.
 
 ## Future responsibilities
 
@@ -64,8 +66,8 @@ Do not add mock handlers or infer payloads until contracts are agreed.
 
 ## Visual rules (Phase 1 onward)
 
-Centralise colours, typography, spacing, radii and shadows with native CSS
-variables; use CSS Modules for component styles. The same semantic role uses the
+Colours, typography, spacing, radii and shadows are centralised in `tokens.css`;
+later component styles use CSS Modules. The same semantic role uses the
 same shared visual rule across views. Mockups guide layout, not separate per-page
 typography systems. Avoid repeated hardcoded values and copied components.
 Use Lucide vector icons consistently; never use emojis as product UI icons.
@@ -73,7 +75,7 @@ Comments should explain non-obvious intent, not restate code.
 
 ## Phase boundaries
 
-0: bootstrap/tooling (current); 1: design system; 2: contracts/API boundary/MSW;
+0: bootstrap/tooling (complete); 1: design system (current); 2: contracts/API boundary/MSW;
 3: shared UI/domain/map/journey components; 4: Plan a Journey; 5: Optimised Route;
 6: Journey Details and modals; 7: Saved Journeys; 8: Shared Trips; 9: refactor,
 QA and integration readiness. Later phases extend these boundaries as needed.

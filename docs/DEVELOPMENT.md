@@ -46,7 +46,7 @@ existing production build locally; it does not launch the API.
 
 ## Environment convention
 
-No environment file is required for Phase 0. When local values are needed, copy
+No environment file is required for Phases 0-1. When local values are needed, copy
 `frontend/.env.example` to ignored `frontend/.env.local` (PowerShell):
 
 ```powershell
@@ -82,6 +82,11 @@ owns formatting and ESLint owns correctness (including type-aware and React rule
 TypeScript checks browser and Vite config separately, with strict checking and no
 JavaScript output. Compiler caches live under ignored `node_modules/.tmp`.
 
+Phase 1 uses `@fontsource-variable/inter` through the global stylesheet. Font
+files are bundled locally during the Vite build; no font CDN or API key is needed.
+Use [Design system](DESIGN_SYSTEM.md) for token values and usage rules. The root
+route remains the neutral scaffold; no component gallery or product UI is added.
+
 The NUnit project references the API but intentionally has no test source files.
 The test command should build and run discovery successfully; a "No test is
 available" discovery message is expected until meaningful backend tests are added.
@@ -94,7 +99,8 @@ Keep npm lockfile changes with dependency changes. Review `git diff` and
 are ignored by the root `.gitignore`. Shared VS Code settings/extensions may be
 tracked if the team later needs them; user-specific files should stay local.
 
-Phase 0 work stays on `initial-setup` for manual QA and commit by the owner.
+Phase 0 is the completed engineering foundation. Phase 1 work remains on the
+existing `ina-frontend` branch for manual QA and commit by the owner.
 Agree cross-team contract changes before implementation. Follow the phase
 boundaries in [Frontend architecture](FRONTEND_ARCHITECTURE.md) and the approved
 [Project scope](PROJECT_SCOPE.md).
