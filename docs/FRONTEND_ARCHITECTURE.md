@@ -1,6 +1,6 @@
 # Frontend architecture direction
 
-## Current foundation (Phases 0-6)
+## Current foundation (Phases 0-7)
 
 `src/main.tsx` mounts React under StrictMode and imports `styles/global.css`.
 `app/App.tsx` composes `AppProviders` with the central router. `AppProviders.tsx`
@@ -40,7 +40,7 @@ the router. Phases 4-5 add planning and route presentation within this foundatio
   dialog orchestration is outside this foundation.
 
 AppShell now wraps planning routes; do not place a second `main` inside it.
-No permanent component gallery, JourneyCard or product modal is included.
+No permanent component gallery is included; feature phases compose these primitives.
 
 ## Plan a Journey (Phase 4)
 
@@ -63,7 +63,7 @@ immediate in-flight guard, disabled controls, abort on unmount, and inline error
 Success stores the submitted configuration/result and navigates to `/plan/route`.
 RouteBoundary renders OptimisedRoutePage; direct access without
 an in-memory result redirects to `/plan`. The Plan sidebar intent returns to the
-preserved draft. Saved/Shared/Account remain visible and disabled.
+preserved draft. Saved is enabled in Phase 7; Shared/Account remain disabled.
 
 `googleMaps.ts` isolates SDK loading, narrow private vendor type descriptions,
 autocomplete session tokens, requested place fields, and map/marker instances.
@@ -136,8 +136,8 @@ the form; success caches the returned Journey and navigates to its returned ID.
 Query key `['journey', id]` own server state. Direct/refresh access fetches the API,
 with loading, unavailable and not-found states rather than a Plan redirect.
 The approved `Plan a journey` action goes to `/plan` and starts a fresh planning
-session; leaving PlanningLayout clears its previous memory. Unimplemented sidebar
-destinations remain disabled and Details marks no sidebar destination active.
+session; leaving PlanningLayout clears its previous memory. Phase 7 enables Saved
+navigation and marks Saved active for owned Details. Shared/Account remain disabled.
 
 Owner fields use one editor at a time with Save/Cancel (and Clear for optional
 fields). Unchanged values do not submit. Successful responses replace the query
@@ -164,7 +164,47 @@ Google Maps and supplied author attribution. Live Google verification is pending
 MSW remains per-tab memory and resets on full reload. Seeded detail IDs verify
 refresh loading; newly created journeys and edits do not survive that reset.
 Durable persistence verification awaits the backend. No browser persistence,
-Saved/Shared listing, sharing workflow or backend implementation is added here.
+sharing workflow or backend implementation is added here; Saved listing follows in Phase 7.
+
+## Saved Journeys (Phase 7)
+
+`features/saved-journeys` owns `/saved`, JourneyCard, the accessible card action
+menu and rename/delete dialog. TanStack Query loads `getOwnedJourneys()` under
+`['owned-journeys']`. Search matches name/start/end case-insensitively; client-side
+sort defaults to Name A–Z. Date sorts place undated journeys last in both directions.
+The grid uses at most three columns, reducing to two at 1280/1024px.
+
+Cards use `representativePlaceId` with the existing PlacePhoto/Google adapter and
+neutral fallback. The final representative-place selection rule is still undecided;
+no photo field or persistence was added. Live Google verification remains pending.
+Main-card buttons and action menus are separate focus targets; author links stay
+independently clickable. Menus support arrow/Home/End, Escape, Tab and outside close.
+Rename sends only name; duplicate uses existing API naming/independence semantics;
+delete requires confirmation. Pending guards prevent duplicate submits, failures
+retain dialog input or appear on the affected card, and duplication announces
+feature-local status feedback. No global notification framework was introduced.
+
+Edit route navigates to `/plan` with a one-use Journey ID in navigation state.
+PlanningLayout consumes and clears that intent, loads the full Journey, verifies
+owner access and initialises a feature-local in-memory session. The draft retains
+occurrence IDs, including the separate return occurrence, and reconstructs query
+text from stored place names. Open End includes all points after Start as
+destinations; Fixed/Return exclude their final endpoint. Initial result is empty:
+the user runs normal Find route; stored order never implies optimisation priority.
+Leaving the planning scope clears the session. New journey from Saved therefore
+starts fresh, and consumed history state cannot restore a previous edit.
+
+Optimised Route uses Save changes for an edit session and sends only `{ plan }`
+with last successful settings/current displayed route. It never routes again or
+opens the creation modal. Omitted metadata/annotations follow existing API retain/
+prune semantics. Failure preserves the session/result; success navigates to Details.
+New journeys retain the Phase 6 creation flow. Shared/Account workflows remain out
+of scope, and no contracts, dependencies or backend code changed.
+
+`journeyData.cacheJourney` caches returned detail objects and invalidates owned
+summaries after create, rename, detail edits, route updates and duplicate. Delete
+cancels related fetches, removes detail/list entries and invalidates the list.
+The summary is re-fetched rather than inventing a client photo-selection policy.
 
 ## Future responsibilities
 
@@ -230,5 +270,5 @@ Comments should explain non-obvious intent, not restate code.
 
 0: bootstrap/tooling; 1: design system; 2: contracts/API boundary/MSW;
 3: shared UI primitives and application shell; 4: Plan a Journey (complete); 5: Optimised Route (complete; live Google verification pending);
-6: Save Journey and Journey Details (implemented; live Google verification pending); 7: Saved Journeys; 8: Shared Trips; 9: refactor,
+6: Save Journey and Journey Details (complete; live Google verification pending); 7: Saved Journeys (implemented; manual QA pending); 8: Shared Trips; 9: refactor,
 QA and integration readiness. Later phases extend these boundaries as needed.

@@ -17,6 +17,8 @@ import type { PlanningResult } from '../journey-planning/planning'
 import type { JourneyPlan } from '../../contracts/journeys'
 import { SaveJourneyModal } from '../journey-details/SaveJourneyModal'
 import { useRouteUpdates } from './useRouteUpdates'
+import { usePlanning } from '../journey-planning/planningContext'
+import { useSaveRouteChanges } from './useSaveRouteChanges'
 import { formatDistance, formatDuration } from './formatters'
 import { RouteStopList } from './components/RouteStopList'
 import { OptimisedRouteMap } from './components/OptimisedRouteMap'
@@ -25,6 +27,8 @@ import styles from './OptimisedRoutePage.module.css'
 export function OptimisedRoutePage({ result }: { result: PlanningResult }) {
   const navigate = useNavigate()
   const updates = useRouteUpdates(result)
+  const { editingJourney } = usePlanning()
+  const saveChanges = useSaveRouteChanges(editingJourney)
   const route = result.currentRoute
   const [savePlan, setSavePlan] = useState<JourneyPlan | null>(null)
   const [interaction, setInteraction] = useState<{
@@ -48,18 +52,24 @@ export function OptimisedRoutePage({ result }: { result: PlanningResult }) {
         variant="ghost"
         leadingIcon={ArrowLeft}
         className={styles.back}
+        disabled={saveChanges.pending}
         onClick={() => {
           void navigate('/plan')
         }}
       >
         Edit places
       </Button>
-      <PageHeader title="Optimised route" />
+      <PageHeader
+        title="Optimised route"
+        subtitle={
+          editingJourney ? `Editing “${editingJourney.name}”` : undefined
+        }
+      />
       <div className={styles.controls}>
         <SegmentedControl
           label="Travel mode"
           value={updates.settings.travelMode}
-          disabled={updates.pending === 'calculate'}
+          disabled={updates.pending === 'calculate' || saveChanges.pending}
           options={[
             { value: 'walking', label: 'Walking', icon: Footprints },
             { value: 'driving', label: 'Driving', icon: Car },
@@ -73,7 +83,7 @@ export function OptimisedRoutePage({ result }: { result: PlanningResult }) {
           <SegmentedControl
             label="Optimize for"
             value={updates.settings.objective}
-            disabled={updates.pending === 'calculate'}
+            disabled={updates.pending === 'calculate' || saveChanges.pending}
             options={[
               { value: 'distance', label: 'Distance', icon: Route },
               { value: 'time', label: 'Travel time', icon: Clock },
@@ -91,6 +101,11 @@ export function OptimisedRoutePage({ result }: { result: PlanningResult }) {
       {updates.error && (
         <p className={styles.error} role="alert">
           {updates.error}
+        </p>
+      )}
+      {saveChanges.error && (
+        <p role="alert" className={styles.error}>
+          {saveChanges.error.message}
         </p>
       )}
       <div className={styles.workspace}>
@@ -130,7 +145,7 @@ export function OptimisedRoutePage({ result }: { result: PlanningResult }) {
           <RouteStopList
             route={route}
             travelMode={result.request.travelMode}
-            disabled={Boolean(updates.pending)}
+            disabled={Boolean(updates.pending) || saveChanges.pending}
             hoveredSegmentId={interaction.hovered}
             selectedSegmentId={interaction.selected}
             onHover={(hovered) =>
@@ -152,7 +167,7 @@ export function OptimisedRoutePage({ result }: { result: PlanningResult }) {
               <Button
                 variant="ghost"
                 leadingIcon={RotateCcw}
-                disabled={Boolean(updates.pending)}
+                disabled={Boolean(updates.pending) || saveChanges.pending}
                 onClick={updates.reset}
               >
                 Reset to optimised route
@@ -162,18 +177,20 @@ export function OptimisedRoutePage({ result }: { result: PlanningResult }) {
           <Button
             leadingIcon={Bookmark}
             className={styles.save}
-            onClick={() =>
-              setSavePlan(
-                structuredClone({
-                  travelMode: result.request.travelMode,
-                  objective: result.request.objective,
-                  endMode: result.request.endMode,
-                  route,
-                }),
-              )
-            }
+            loading={saveChanges.pending}
+            loadingLabel="Saving changes…"
+            onClick={() => {
+              const plan = structuredClone({
+                travelMode: result.request.travelMode,
+                objective: result.request.objective,
+                endMode: result.request.endMode,
+                route,
+              })
+              if (editingJourney) void saveChanges.save(plan)
+              else setSavePlan(plan)
+            }}
           >
-            Save journey
+            {editingJourney ? 'Save changes' : 'Save journey'}
           </Button>
         </section>
         <OptimisedRouteMap

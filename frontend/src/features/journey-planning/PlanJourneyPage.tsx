@@ -26,7 +26,7 @@ import { JourneyPlanMap } from './components/JourneyPlanMap'
 import styles from './PlanJourneyPage.module.css'
 
 export function PlanJourneyPage() {
-  const { draft, setDraft, setResult } = usePlanning()
+  const { draft, setDraft, setResult, editingJourney } = usePlanning()
   const navigate = useNavigate()
   const [googleReady, setGoogleReady] = useState(false)
   const [googleError, setGoogleError] = useState<string | null>(null)
@@ -132,7 +132,12 @@ export function PlanJourneyPage() {
 
   return (
     <>
-      <PageHeader title="Plan a journey" />
+      <PageHeader
+        title="Plan a journey"
+        subtitle={
+          editingJourney ? `Editing “${editingJourney.name}”` : undefined
+        }
+      />
       <form
         ref={formRef}
         onSubmit={(event) => {

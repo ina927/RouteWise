@@ -6,7 +6,7 @@ import type { JourneyPlan } from '../../contracts/journeys'
 import { Modal } from '../../components/ui/Modal'
 import { TextInput } from '../../components/ui/TextInput'
 import { Button } from '../../components/ui/Button'
-import { journeyKey } from './journeyData'
+import { cacheJourney } from './journeyData'
 import styles from './JourneyDetails.module.css'
 
 export function SaveJourneyModal({
@@ -36,7 +36,7 @@ export function SaveJourneyModal({
         plan,
         annotations: [],
       })
-      client.setQueryData(journeyKey(journey.id), journey)
+      await cacheJourney(client, journey)
       await navigate(`/journeys/${encodeURIComponent(journey.id)}`)
     } catch {
       /* Mutation error is rendered below; keep entered values. */

@@ -150,8 +150,16 @@ Keep npm lockfile changes with dependency changes. Review `git diff` and
 are ignored by the root `.gitignore`. Shared VS Code settings/extensions may be
 tracked if the team later needs them; user-specific files should stay local.
 
-Phases 0-5 are frozen foundations; Phase 6 remains on the existing `ina-frontend`
+Phases 0-6 are frozen foundations; Phase 7 remains on the existing `ina-frontend`
 branch for manual QA and commit by the owner.
+
+Open `/saved` with MSW enabled to view the seeded owned journeys. Search/sort and
+owner actions use the existing contracts. Edit route loads a saved Journey into
+`/plan`; after Find route, Save changes updates its plan and opens Details.
+Leaving planning discards this in-memory edit session; New journey starts fresh.
+The existing per-tab MSW refresh reset still applies. Google photos use the Phase 6
+fallback until live access is available. Phase 7 validation uses the deterministic
+commands plus `npm run smoke:api` and `git diff --check`; visual/source QA is manual.
 Agree cross-team contract changes before implementation. Follow the phase
 boundaries in [Frontend architecture](FRONTEND_ARCHITECTURE.md) and the approved
 [Project scope](PROJECT_SCOPE.md).

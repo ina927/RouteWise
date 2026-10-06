@@ -1,4 +1,8 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import {
+  useMutation,
+  useQueryClient,
+  type QueryClient,
+} from '@tanstack/react-query'
 import { useRef } from 'react'
 import { updateJourney } from '../../api/journeysApi'
 import type {
@@ -8,6 +12,13 @@ import type {
 } from '../../contracts/journeys'
 
 export const journeyKey = (id: string) => ['journey', id] as const
+export const ownedJourneysKey = ['owned-journeys'] as const
+
+export async function cacheJourney(client: QueryClient, journey: Journey) {
+  await client.cancelQueries({ queryKey: journeyKey(journey.id) })
+  client.setQueryData(journeyKey(journey.id), journey)
+  await client.invalidateQueries({ queryKey: ownedJourneysKey })
+}
 
 export function replaceAnnotationField(
   annotations: PointAnnotation[],
@@ -41,7 +52,7 @@ export function useJourneyUpdate(journey: Journey) {
         client.getQueryData<Journey>(journeyKey(journey.id)) ?? journey
       if (current.access !== 'owner') return false
       const updated = await mutation.mutateAsync(build(current))
-      client.setQueryData(journeyKey(journey.id), updated)
+      await cacheJourney(client, updated)
       return true
     } catch {
       return false

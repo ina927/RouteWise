@@ -39,9 +39,11 @@ export function JourneyDetailsPage() {
   })
   return (
     <AppShell
-      disabledItems={['saved', 'shared', 'account']}
+      activeItem={query.data?.access === 'owner' ? 'saved' : undefined}
+      disabledItems={['shared', 'account']}
       onNavigate={(destination) => {
         if (destination === 'plan') void navigate('/plan')
+        if (destination === 'saved') void navigate('/saved')
       }}
     >
       <Button

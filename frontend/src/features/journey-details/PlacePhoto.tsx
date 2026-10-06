@@ -7,7 +7,13 @@ import {
 } from '../journey-planning/googleMaps'
 import styles from './JourneyDetails.module.css'
 
-export function PlacePhoto({ place }: { place: Place }) {
+export function PlacePhoto({
+  place,
+  cover = false,
+}: {
+  place: Pick<Place, 'placeId' | 'name'>
+  cover?: boolean
+}) {
   const [photo, setPhoto] = useState<PlacePhotoData | null>(null)
   const [failed, setFailed] = useState(false)
   useEffect(() => {
@@ -22,7 +28,7 @@ export function PlacePhoto({ place }: { place: Place }) {
     return () => controller.abort()
   }, [place.placeId])
   return (
-    <figure className={styles.photo}>
+    <figure className={`${styles.photo} ${cover ? styles.coverPhoto : ''}`}>
       {photo && !failed ? (
         <>
           <img
