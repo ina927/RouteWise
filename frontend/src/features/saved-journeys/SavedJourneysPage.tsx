@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router'
 import { Plus } from 'lucide-react'
 import { duplicateJourney, getOwnedJourneys } from '../../api/journeysApi'
 import type { JourneySummary } from '../../contracts/journeys'
-import { AppShell } from '../../components/layout/AppShell'
+import { ProductShell } from '../../app/ProductShell'
 import { PageHeader } from '../../components/layout/PageHeader'
 import { Button } from '../../components/ui/Button'
 import { SearchInput } from '../../components/ui/SearchInput'
@@ -14,6 +14,7 @@ import { JourneyCard } from './JourneyCard'
 import { SavedJourneyDialog } from './SavedJourneyDialog'
 import type { CardAction } from './CardActions'
 import styles from './SavedJourneys.module.css'
+import cardStyles from '../journeys/JourneyCards.module.css'
 
 const names = new Intl.Collator(undefined, {
   sensitivity: 'base',
@@ -95,14 +96,7 @@ export function SavedJourneysPage() {
     }
   }
   return (
-    <AppShell
-      activeItem="saved"
-      disabledItems={['shared', 'account']}
-      onNavigate={(destination) => {
-        if (destination === 'plan') newJourney()
-        if (destination === 'saved') void navigate('/saved')
-      }}
-    >
+    <ProductShell activeItem="saved">
       <PageHeader
         title="Saved journeys"
         subtitle="Your trips, all in one place."
@@ -169,7 +163,7 @@ export function SavedJourneysPage() {
           </Button>
         </section>
       ) : (
-        <div className={styles.grid}>
+        <div className={cardStyles.grid}>
           {journeys.map((journey) => (
             <JourneyCard
               key={journey.id}
@@ -193,6 +187,6 @@ export function SavedJourneysPage() {
           onClose={() => setDialog(null)}
         />
       )}
-    </AppShell>
+    </ProductShell>
   )
 }

@@ -1,6 +1,6 @@
 # Frontend architecture direction
 
-## Current foundation (Phases 0-7)
+## Current foundation (Phases 0-8)
 
 `src/main.tsx` mounts React under StrictMode and imports `styles/global.css`.
 `app/App.tsx` composes `AppProviders` with the central router. `AppProviders.tsx`
@@ -63,7 +63,7 @@ immediate in-flight guard, disabled controls, abort on unmount, and inline error
 Success stores the submitted configuration/result and navigates to `/plan/route`.
 RouteBoundary renders OptimisedRoutePage; direct access without
 an in-memory result redirects to `/plan`. The Plan sidebar intent returns to the
-preserved draft. Saved is enabled in Phase 7; Shared/Account remain disabled.
+preserved draft. Saved and Shared are enabled; Account remains disabled.
 
 `googleMaps.ts` isolates SDK loading, narrow private vendor type descriptions,
 autocomplete session tokens, requested place fields, and map/marker instances.
@@ -135,9 +135,9 @@ the form; success caches the returned Journey and navigates to its returned ID.
 `/journeys/:journeyId` is outside PlanningLayout. `getJourney(id)` and the TanStack
 Query key `['journey', id]` own server state. Direct/refresh access fetches the API,
 with loading, unavailable and not-found states rather than a Plan redirect.
-The approved `Plan a journey` action goes to `/plan` and starts a fresh planning
-session; leaving PlanningLayout clears its previous memory. Phase 7 enables Saved
-navigation and marks Saved active for owned Details. Shared/Account remain disabled.
+Details returns to Saved for owner access and Shared for shared access, with the
+matching Sidebar item active. This uses API access rather than browser history.
+Plan navigation starts a fresh session; leaving PlanningLayout clears its memory.
 
 Owner fields use one editor at a time with Save/Cancel (and Clear for optional
 fields). Unchanged values do not submit. Successful responses replace the query
@@ -206,6 +206,49 @@ summaries after create, rename, detail edits, route updates and duplicate. Delet
 cancels related fetches, removes detail/list entries and invalidates the list.
 The summary is re-fetched rather than inventing a client photo-selection policy.
 
+## Shared Trips and Journey Sharing (Phase 8)
+
+`app/ProductShell` connects navigation and the shared incoming-invitation query to
+presentational AppShell/Sidebar. Plan, Saved and Shared are enabled; only Account
+is disabled. The red notification count is derived from incoming invitations
+whose status is pending, hidden at zero and shared across page observers.
+
+`features/sharing` owns `/shared`, compact pending rows, accepted cards, removal
+confirmation and the owner-only Share modal. Pending and accepted sections have
+independent loading/error/empty states. Accept/Decline use the existing response
+API, update incoming cache immediately, and refetch it; Accept also adds the
+returned summary to an existing shared-list cache and invalidates that list.
+Removal calls only the shared-relationship endpoint, cancels related reads,
+removes list/detail caches and invalidates shared journeys. It does not delete an
+owner journey or modify invitation history. Mutation guards block repeat submits;
+errors retain the affected row/dialog for retry.
+
+Keys are `['incoming-invitations']`, `['shared-journeys']`,
+`['journey-invitations', id]` and `['user-search', trimmedQuery]`, alongside the
+existing detail/owned keys. Incoming data has a 30-second freshness window to
+avoid repeated shell fetches, with normal query refetch behaviour thereafter.
+No polling, global cache clearing or browser persistence was introduced.
+
+The Share modal trims/debounces search by 300ms, skips empty input and uses
+abortable query keys plus current-term gating to prevent stale results appearing.
+Sharing lookup/display is username-only. The UI filters returned results against
+the username and excludes all Pending/Accepted/Declined recipients. A compact
+keyboard-accessible dropdown selects a recipient; a separate Invite button sends
+only after selection. Success clears selection/search. Sending retains the same
+journey-invitations cache update/invalidation. Existing invitations remain below
+with status badges. No reinvite policy is introduced. Initial avatars derive their
+letter from username and a stable restrained colour from user ID; no profile data.
+
+`features/journeys` contains the extracted card visual shell, grid CSS and
+keyboard menu shared by Saved and Shared. Saved keeps its explicit owned-action
+wrapper; Shared supplies only Remove from Shared. Saved and Shared use the same
+24.75rem (396px) maximum card width, 40px gaps and at-most-three columns.
+The sharing byline renders only when present, leaving no empty slot in Saved.
+Longer content can grow without clipping. Photo treatment is retained.
+PlacePhoto and read-only Journey Details are reused. No contract, dependency,
+mock permission, backend, authentication or social feature was added. Live Google
+photo verification remains pending; Phase 9 has not begun.
+
 ## Future responsibilities
 
 Create directories when they have real responsibilities, not as empty placeholders:
@@ -270,5 +313,5 @@ Comments should explain non-obvious intent, not restate code.
 
 0: bootstrap/tooling; 1: design system; 2: contracts/API boundary/MSW;
 3: shared UI primitives and application shell; 4: Plan a Journey (complete); 5: Optimised Route (complete; live Google verification pending);
-6: Save Journey and Journey Details (complete; live Google verification pending); 7: Saved Journeys (implemented; manual QA pending); 8: Shared Trips; 9: refactor,
+6: Save Journey and Journey Details (complete; live Google verification pending); 7: Saved Journeys (complete); 8: Shared Trips and Journey Sharing (implemented; manual visual QA pending); 9: refactor,
 QA and integration readiness. Later phases extend these boundaries as needed.

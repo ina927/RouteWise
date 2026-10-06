@@ -11,8 +11,12 @@
 }
 .titleRow {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-3);
+}
+.share {
+  margin-inline-start: auto;
 }
 .titleRow h1,
 .failure h1 {

@@ -11,11 +11,12 @@ import {
   Map,
   Pencil,
   Route,
+  Share2,
 } from 'lucide-react'
 import { getJourney } from '../../api/journeysApi'
 import { ApiError } from '../../api/httpClient'
 import type { Journey } from '../../contracts/journeys'
-import { AppShell } from '../../components/layout/AppShell'
+import { ProductShell } from '../../app/ProductShell'
 import { Button } from '../../components/ui/Button'
 import { IconButton } from '../../components/ui/IconButton'
 import { Toggle } from '../../components/ui/Toggle'
@@ -27,6 +28,7 @@ import { OptimisedRouteMap } from '../route-optimisation/components/OptimisedRou
 import { DetailFieldEditor } from './DetailFieldEditor'
 import { JourneyItinerary, type EditingField } from './JourneyItinerary'
 import { journeyKey, useJourneyUpdate } from './journeyData'
+import { ShareJourneyModal } from '../sharing/ShareJourneyModal'
 import styles from './JourneyDetails.module.css'
 
 export function JourneyDetailsPage() {
@@ -38,23 +40,20 @@ export function JourneyDetailsPage() {
     retry: false,
   })
   return (
-    <AppShell
-      activeItem={query.data?.access === 'owner' ? 'saved' : undefined}
-      disabledItems={['shared', 'account']}
-      onNavigate={(destination) => {
-        if (destination === 'plan') void navigate('/plan')
-        if (destination === 'saved') void navigate('/saved')
-      }}
+    <ProductShell
+      activeItem={query.data?.access === 'shared' ? 'shared' : 'saved'}
     >
       <Button
         variant="ghost"
         leadingIcon={ArrowLeft}
         className={styles.back}
         onClick={() => {
-          void navigate('/plan')
+          void navigate(query.data?.access === 'shared' ? '/shared' : '/saved')
         }}
       >
-        Plan a journey
+        {query.data?.access === 'shared'
+          ? 'Back to shared trips'
+          : 'Back to saved journeys'}
       </Button>
       {query.isPending ? (
         <p role="status">Loading journey…</p>
@@ -80,11 +79,12 @@ export function JourneyDetailsPage() {
           </Button>
         </section>
       )}
-    </AppShell>
+    </ProductShell>
   )
 }
 
 function JourneyDetails({ journey }: { journey: Journey }) {
+  const [sharing, setSharing] = useState(false)
   const [tab, setTab] = useState<'itinerary' | 'map'>('itinerary')
   const [showTimes, setShowTimes] = useState(() =>
     journey.annotations.some((item) => item.plannedTime),
@@ -123,6 +123,16 @@ function JourneyDetails({ journey }: { journey: Journey }) {
                 disabled={Boolean(editing) || updates.pending}
                 onClick={() => edit({ field: 'name' })}
               />
+            )}
+            {owner && (
+              <Button
+                leadingIcon={Share2}
+                className={styles.share}
+                disabled={Boolean(editing) || updates.pending}
+                onClick={() => setSharing(true)}
+              >
+                Share
+              </Button>
             )}
           </div>
         )}
@@ -252,6 +262,12 @@ function JourneyDetails({ journey }: { journey: Journey }) {
           />
         )}
       </section>
+      {owner && sharing && (
+        <ShareJourneyModal
+          journeyId={journey.id}
+          onClose={() => setSharing(false)}
+        />
+      )}
     </div>
   )
 }

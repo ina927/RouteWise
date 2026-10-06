@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Outlet, useLocation, useNavigate } from 'react-router'
-import { AppShell } from '../../components/layout/AppShell'
+import { ProductShell } from '../../app/ProductShell'
 import { Button } from '../../components/ui/Button'
 import { getJourney } from '../../api/journeysApi'
 import type { Journey } from '../../contracts/journeys'
@@ -40,14 +40,7 @@ export function PlanningLayout() {
     !editId ||
     (journey?.access === 'owner' && journey.plan.route.points.length >= 2)
   return (
-    <AppShell
-      activeItem="plan"
-      disabledItems={['shared', 'account']}
-      onNavigate={(destination) => {
-        if (destination === 'plan') void navigate('/plan')
-        if (destination === 'saved') void navigate('/saved')
-      }}
-    >
+    <ProductShell activeItem="plan">
       {editId && query.isPending ? (
         <p role="status">Loading journey for editing…</p>
       ) : !usable ? (
@@ -69,7 +62,7 @@ export function PlanningLayout() {
       ) : (
         <PlanningSession journey={journey ?? null} />
       )}
-    </AppShell>
+    </ProductShell>
   )
 }
 

@@ -4,6 +4,7 @@ import { PlanJourneyPage } from '../features/journey-planning/PlanJourneyPage'
 import { RouteBoundary } from '../features/journey-planning/RouteBoundary'
 import { JourneyDetailsPage } from '../features/journey-details/JourneyDetailsPage'
 import { SavedJourneysPage } from '../features/saved-journeys/SavedJourneysPage'
+import { SharedTripsPage } from '../features/sharing/SharedTripsPage'
 
 export const router = createBrowserRouter([
   {
@@ -21,6 +22,10 @@ export const router = createBrowserRouter([
   {
     path: '/saved',
     element: <SavedJourneysPage />,
+  },
+  {
+    path: '/shared',
+    element: <SharedTripsPage />,
   },
   {
     path: '/journeys/:journeyId',

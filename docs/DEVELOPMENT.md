@@ -150,8 +150,8 @@ Keep npm lockfile changes with dependency changes. Review `git diff` and
 are ignored by the root `.gitignore`. Shared VS Code settings/extensions may be
 tracked if the team later needs them; user-specific files should stay local.
 
-Phases 0-6 are frozen foundations; Phase 7 remains on the existing `ina-frontend`
-branch for manual QA and commit by the owner.
+Phases 0-7 are frozen; Phase 8 remains on the existing `ina-frontend`
+branch for manual visual QA and commit by the owner.
 
 Open `/saved` with MSW enabled to view the seeded owned journeys. Search/sort and
 owner actions use the existing contracts. Edit route loads a saved Journey into
@@ -163,3 +163,24 @@ commands plus `npm run smoke:api` and `git diff --check`; visual/source QA is ma
 Agree cross-team contract changes before implementation. Follow the phase
 boundaries in [Frontend architecture](FRONTEND_ARCHITECTURE.md) and the approved
 [Project scope](PROJECT_SCOPE.md).
+
+## Phase 8 sharing review
+
+With MSW enabled, open `/shared`: the default viewer has one pending invitation
+(Coastal afternoon) and one accepted journey (Museum walk). Accept/Decline updates
+the list and Sidebar count without reloading. Removing an accepted journey affects
+only this recipient and clears its cached detail access. Full reload resets mocks.
+
+Open `/journeys/journey-city` and Share to see pending/accepted invitations;
+`/journeys/journey-harbour` has a declined example. Sharing search accepts usernames only. Suggestions exclude all existing invitees;
+select a username, then use Invite. No email is displayed.
+Use the existing photo fallback; live Google verification remains pending.
+Phase 8 checks are typecheck, lint, build, format:check, smoke:api and git diff
+--check, plus one focused browser pass for sharing, permissions, Saved navigation
+and widths 1024/1280/1440. No screenshots or permanent QA route are required.
+
+Sharing integration handover: the unchanged Phase 2 searchUsers boundary/mock can
+still match broader fields. The final backend user-search behaviour must narrow
+to username lookup to match the confirmed sharing UI. The UI admits only matching
+usernames for selection; it reads no private mock fields. Email remains planned
+for User/Auth account data, with that contract still to be decided.
