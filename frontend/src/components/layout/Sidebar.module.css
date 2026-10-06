@@ -56,10 +56,10 @@
   overflow-wrap: anywhere;
   cursor: pointer;
 }
-.item:hover {
+.item:hover:not(:disabled) {
   background: var(--color-surface-hover);
 }
-.item:active {
+.item:active:not(:disabled) {
   background: var(--color-surface-pressed);
 }
 .item[aria-current='page'] {
@@ -70,6 +70,11 @@
 .icon {
   position: relative;
   display: flex;
+}
+.item:disabled {
+  color: var(--color-disabled-text);
+  background: transparent;
+  cursor: not-allowed;
 }
 .icon > svg {
   inline-size: var(--icon-size-lg);

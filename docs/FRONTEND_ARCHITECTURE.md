@@ -1,12 +1,12 @@
 # Frontend architecture direction
 
-## Current foundation (Phases 0-3)
+## Current foundation (Phases 0-4)
 
 `src/main.tsx` mounts React under StrictMode and imports `styles/global.css`.
 `app/App.tsx` composes `AppProviders` with the central router. `AppProviders.tsx`
 owns one stable TanStack Query client; `router.tsx` owns route definitions outside
-React renders. Root and unknown-route messages are neutral bootstrap fallbacks.
-They are not product screens.
+React renders. Root redirects to `/plan`; unknown routes retain the neutral
+bootstrap fallback. `/plan` and `/plan/route` share PlanningLayout.
 
 Phase 1 adds `styles/tokens.css` and a self-hosted Inter font, both loaded by
 `global.css`. See [Design system](DESIGN_SYSTEM.md) for the visual source of truth.
@@ -19,8 +19,9 @@ the router. Maps, journey presentation and feature orchestration remain later wo
 
 - `components/layout`: AppShell owns only the sidebar/main structure and skip
   link; Sidebar receives `activeItem`, `pendingSharedCount` and `onNavigate`.
-  The callback emits `plan | saved | shared | account` intentions. A future router
-  adapter owns destinations; no placeholder routes or business state are needed.
+  The callback emits `plan | saved | shared | account` intentions. The route
+  layout owns destinations. Optional `disabledItems` applies native disabled
+  semantics and styling without emitting navigation or adding business state.
   PageHeader accepts a title, optional subtitle and actions.
 - `components/ui`: Button, IconButton, TextInput, SearchInput, Select,
   SegmentedControl, Toggle, Badge and Modal. Import components directly.
@@ -38,9 +39,39 @@ the router. Maps, journey presentation and feature orchestration remain later wo
   Backdrop clicks do not dismiss. Use one application modal at a time; nested
   dialog orchestration is outside this foundation.
 
-The existing neutral bootstrap stays unchanged. AppShell will wrap actual routes
-in a feature phase; do not place a second `main` inside it. No permanent component
-gallery, JourneyCard, product modal or feature layout is included.
+AppShell now wraps planning routes; do not place a second `main` inside it.
+No permanent component gallery, JourneyCard or product modal is included.
+
+## Plan a Journey (Phase 4)
+
+`features/journey-planning/PlanningLayout` owns a React context scoped to `/plan`
+and `/plan/route`. It retains editable query/Place rows, stable occurrence IDs,
+nullable mode/objective/end mode, the submitted request snapshot and the original
+successful result. Full reload or leaving this route scope clears memory; there
+is no browser storage or application-wide store. Fixed End state stays in the
+draft even when its field is unmounted. Typed text alone is never a Place.
+
+`PlanJourneyPage` composes the shared primitives and feature-local PlaceSearchField,
+EndModeSelector and JourneyPlanMap. `planning.ts` builds a transport request only
+when confirmed requirements are met. The counter counts selected occurrences;
+add-row capacity additionally reserves the active mode's endpoint slots and caps
+empty rows. No selected input is deleted on mode changes. Unselected search text
+and blank rows are omitted from submission, as indicated in the form helper.
+
+Find route uses a TanStack mutation through `routesApi.optimizeRoute`, with an
+immediate in-flight guard, disabled controls, abort on unmount, and inline errors.
+Success stores the submitted configuration/result and navigates to `/plan/route`.
+RouteBoundary contains only neutral Phase 5-pending text; direct access without
+an in-memory result redirects to `/plan`. The Plan sidebar intent returns to the
+preserved draft. Saved/Shared/Account remain visible and disabled.
+
+`googleMaps.ts` isolates SDK loading, narrow private vendor type descriptions,
+autocomplete session tokens, requested place fields, and map/marker instances.
+Only application-owned Place data and a small suggestion selection callback
+cross into the feature. Search uses a 300ms debounce and discards stale responses.
+The map uses Advanced Markers, reads existing CSS colour tokens, and draws no
+route lines or numbers. A neutral world view is an implementation default, never
+a Places search bias. At narrower desktop widths the feature grid stacks.
 
 ## Future responsibilities
 
@@ -105,6 +136,6 @@ Comments should explain non-obvious intent, not restate code.
 ## Phase boundaries
 
 0: bootstrap/tooling; 1: design system; 2: contracts/API boundary/MSW;
-3: shared UI primitives and application shell (complete); 4: Plan a Journey; 5: Optimised Route;
+3: shared UI primitives and application shell; 4: Plan a Journey (complete); 5: Optimised Route;
 6: Journey Details and modals; 7: Saved Journeys; 8: Shared Trips; 9: refactor,
 QA and integration readiness. Later phases extend these boundaries as needed.

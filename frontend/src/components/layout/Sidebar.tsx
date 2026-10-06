@@ -6,6 +6,7 @@ export type SidebarDestination = 'plan' | 'saved' | 'shared' | 'account'
 export type SidebarProps = {
   activeItem?: SidebarDestination
   pendingSharedCount?: number
+  disabledItems?: readonly SidebarDestination[]
   onNavigate: (destination: SidebarDestination) => void
 }
 
@@ -19,6 +20,7 @@ const destinations = [
 export function Sidebar({
   activeItem,
   pendingSharedCount = 0,
+  disabledItems = [],
   onNavigate,
 }: SidebarProps) {
   return (
@@ -36,6 +38,7 @@ export function Sidebar({
             >
               <button
                 type="button"
+                disabled={disabledItems.includes(id)}
                 className={styles.item}
                 aria-current={activeItem === id ? 'page' : undefined}
                 aria-label={

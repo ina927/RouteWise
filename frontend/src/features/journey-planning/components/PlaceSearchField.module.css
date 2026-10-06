@@ -1,0 +1,61 @@
+.field {
+  position: relative;
+  min-inline-size: 0;
+}
+.input {
+  padding-inline-end: calc(var(--control-height-default) + var(--space-2));
+}
+.clear {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-end: 0;
+  color: var(--color-text-secondary);
+}
+.results {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: var(--control-height-default);
+  z-index: 2;
+  max-block-size: 16rem;
+  overflow-y: auto;
+  list-style: none;
+  padding: var(--space-1);
+  margin: var(--space-1) 0 0;
+  border: var(--border-width) solid var(--color-border-control);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-subtle);
+}
+.option {
+  padding: var(--space-3);
+  font: var(--font-body-secondary);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.attribution {
+  padding: var(--space-2) var(--space-3);
+  border-block-start: var(--border-width) solid var(--color-border);
+  font: var(--font-body-secondary);
+  /* Google's required attribution colour, not a RouteWise brand colour. */
+  color: #5e5e5e;
+  white-space: nowrap;
+}
+.option:hover,
+.option[aria-selected='true'] {
+  background: var(--color-selected-surface);
+  color: var(--color-selected-text);
+}
+.feedback {
+  margin-block-start: var(--space-1);
+  font: var(--font-caption);
+  color: var(--color-text-secondary);
+}
+.feedback:empty {
+  display: none;
+}

@@ -39,24 +39,45 @@ rewriting the prefix. `http://localhost:5173/api/health` should return `Healthy`
 while both servers run; the direct backend URL works too. This proxy is for
 development only. Production hosting and its API routing remain a later decision.
 
-The frontend can boot without a running backend because it makes no requests yet.
-Its plain scaffold message and unknown-route fallback are intentional. Stop both
+The frontend can boot without a backend; enable MSW below for product API calls.
+The Plan page requires Google configuration for live search/maps. Stop both
 servers with Ctrl+C after use. `npm --prefix frontend run preview` serves an
 existing production build locally; it does not launch the API.
 
 ## Environment convention
 
-No environment file is required for Phases 0-1. When local values are needed, copy
+For local configuration, copy
 `frontend/.env.example` to ignored `frontend/.env.local` (PowerShell):
 
 ```powershell
 Copy-Item frontend/.env.example frontend/.env.local
 ```
 
-- `VITE_API_BASE_URL=/api`: reserved for the Phase 2 fetch boundary and MSW/real
-  endpoint switch. Changing it currently has no effect because there is no client.
-- `VITE_GOOGLE_MAPS_API_KEY=`: leave blank until Maps integration. A browser key is
-  public and must later be restricted by HTTP referrer and permitted Google APIs.
+- `VITE_API_BASE_URL=/api`: base URL used by the frontend API modules.
+- `VITE_ENABLE_MOCKS=true`: intercept product HTTP calls in development only;
+  missing/false calls real endpoints. MSW does not mock Google search/maps.
+- `VITE_GOOGLE_MAPS_API_KEY=`: browser key for Maps JavaScript API and Places API
+  (New). Enable both APIs and billing on the Google Cloud project; restrict the
+  key by permitted APIs and your local/deployed HTTP referrers. Keep the actual
+  key only in ignored `.env.local` or the deployment environment.
+- `VITE_GOOGLE_MAP_ID=`: a JavaScript Map ID for Advanced Markers. A configured ID
+  is used as-is. Development alone falls back to `DEMO_MAP_ID` when blank.
+  Production rejects a missing ID or `DEMO_MAP_ID`; there is no production demo
+  fallback. Missing configuration keeps the shell usable with unavailable states.
+
+The Google adapter uses the supported [async script loader and importLibrary](https://developers.google.com/maps/documentation/javascript/load-maps-js-api),
+[Place Autocomplete Data API](https://developers.google.com/maps/documentation/javascript/place-autocomplete-data)
+with session tokens and `Place.fetchFields`, and [Advanced Markers](https://developers.google.com/maps/documentation/javascript/advanced-markers/start).
+No npm loader or map wrapper is installed. It requests only id, displayName,
+formattedAddress and location, then converts to the existing RouteWise Place.
+No country, location, radius or map-viewport bias is configured; no geolocation
+permission is requested. Suggestions include Google Maps attribution.
+
+Script/network timeout and Google authentication failures surface restrained
+unavailable states; place request failures stay inline. After correcting key/API
+permissions, reload the page to retry initialization. A full reload clears the
+planning draft and original result by design. Live Google success needs valid
+project credentials; controlled browser test responses do not verify that setup.
 
 All `VITE_` values can be included in browser code; they are not secret storage.
 Never put backend credentials in them. Use environment variables or .NET user
@@ -85,7 +106,8 @@ JavaScript output. Compiler caches live under ignored `node_modules/.tmp`.
 Phase 1 uses `@fontsource-variable/inter` through the global stylesheet. Font
 files are bundled locally during the Vite build; no font CDN or API key is needed.
 Use [Design system](DESIGN_SYSTEM.md) for token values and usage rules. The root
-route remains the neutral scaffold; no component gallery or product UI is added.
+route redirects to Plan; there is no component gallery. The neutral `/plan/route`
+boundary is replaced by the Optimised Route UI in Phase 5.
 
 The NUnit project references the API but intentionally has no test source files.
 The test command should build and run discovery successfully; a "No test is
@@ -99,8 +121,8 @@ Keep npm lockfile changes with dependency changes. Review `git diff` and
 are ignored by the root `.gitignore`. Shared VS Code settings/extensions may be
 tracked if the team later needs them; user-specific files should stay local.
 
-Phase 0 is the completed engineering foundation. Phase 1 work remains on the
-existing `ina-frontend` branch for manual QA and commit by the owner.
+Phases 0-3 are frozen foundations; Phase 4 remains on the existing `ina-frontend`
+branch for manual QA and commit by the owner.
 Agree cross-team contract changes before implementation. Follow the phase
 boundaries in [Frontend architecture](FRONTEND_ARCHITECTURE.md) and the approved
 [Project scope](PROJECT_SCOPE.md).
