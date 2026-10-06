@@ -23,6 +23,9 @@
   --color-selected-text: var(--color-primary-active);
   --color-selected-border: var(--color-primary);
 
+  /* Notification badges are independent of route and danger semantics. */
+  --color-notification: #d83a52;
+
   /* Route identity is independent of error/destructive feedback. */
   --color-route: #d83a52;
   --color-route-surface: #fff1f3;

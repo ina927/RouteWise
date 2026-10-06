@@ -1,6 +1,6 @@
 # Frontend architecture direction
 
-## Current foundation (Phases 0-1)
+## Current foundation (Phases 0-3)
 
 `src/main.tsx` mounts React under StrictMode and imports `styles/global.css`.
 `app/App.tsx` composes `AppProviders` with the central router. `AppProviders.tsx`
@@ -10,9 +10,37 @@ They are not product screens.
 
 Phase 1 adds `styles/tokens.css` and a self-hosted Inter font, both loaded by
 `global.css`. See [Design system](DESIGN_SYSTEM.md) for the visual source of truth.
-Vite handles CSS Modules natively. No module styles, maps, product components,
-data contracts, API client or mocks are implemented yet. dnd-kit, Lucide and MSW
-are installed as confirmed future dependencies only.
+Vite handles CSS Modules natively. Phase 2 provides frontend contracts, fetch
+modules and MSW handlers; contracts remain pending backend-team review. Phase 3
+adds shared layout and UI components without mounting feature pages or changing
+the router. Maps, journey presentation and feature orchestration remain later work.
+
+## Shared UI foundation (Phase 3)
+
+- `components/layout`: AppShell owns only the sidebar/main structure and skip
+  link; Sidebar receives `activeItem`, `pendingSharedCount` and `onNavigate`.
+  The callback emits `plan | saved | shared | account` intentions. A future router
+  adapter owns destinations; no placeholder routes or business state are needed.
+  PageHeader accepts a title, optional subtitle and actions.
+- `components/ui`: Button, IconButton, TextInput, SearchInput, Select,
+  SegmentedControl, Toggle, Badge and Modal. Import components directly.
+  Field is an internal label/helper/error structure shared by TextInput and Select;
+  SearchInput composes TextInput and IconButton shares Button's visual styles.
+- Data in, events out: no API, mock, contract or feature imports. Search, segmented
+  selection, toggles and modals are controlled by their future consumers.
+- Native buttons/inputs/select/radios provide keyboard semantics. Inputs/selects
+  require a label (optionally visually hidden) and associate messages with IDs.
+  IconButton requires a label. Useful native props/ref are passed to controls.
+- Modal uses native `dialog.showModal()` for modal focus containment and inert
+  background. It focuses its title or a supplied `initialFocusRef`, closes via
+  Escape/close button, restores the connected opener, and locks background scroll.
+  Consumers set `open=false` in `onClose`; compose fields and footer actions.
+  Backdrop clicks do not dismiss. Use one application modal at a time; nested
+  dialog orchestration is outside this foundation.
+
+The existing neutral bootstrap stays unchanged. AppShell will wrap actual routes
+in a feature phase; do not place a second `main` inside it. No permanent component
+gallery, JourneyCard, product modal or feature layout is included.
 
 ## Future responsibilities
 
@@ -23,7 +51,7 @@ src/
   app/                         bootstrap, providers, routing
   components/
     ui/                        reusable visual primitives
-    navigation/                shared navigation
+    layout/                    application shell, sidebar and page header
     maps/                      map presentation and interaction
     journey/                   reusable journey presentation
   features/
@@ -58,11 +86,12 @@ implementation. Pages must not depend on EF entities, backend class layout or
 Google service response shapes. Agreed frontend contracts preserve each team's
 freedom to implement its own internals.
 
-Use browser `fetch` through a small API boundary. MSW will intercept those same
+Use browser `fetch` through a small API boundary. MSW intercepts those same
 HTTP requests during mock-first development. Switching to real endpoints should
-change configuration/mock startup, not page components. `VITE_API_BASE_URL` is
-reserved for that boundary; Phase 0 does not consume it or make product requests.
-Do not add mock handlers or infer payloads until contracts are agreed.
+change configuration/mock startup, not page components. `VITE_API_BASE_URL` sets
+that boundary; `VITE_ENABLE_MOCKS=true` enables development mocking. See
+[API contracts](API_CONTRACTS.md) for proposed shapes and mock-only decisions.
+Phase 3 leaves this layer unchanged.
 
 ## Visual rules (Phase 1 onward)
 
@@ -75,7 +104,7 @@ Comments should explain non-obvious intent, not restate code.
 
 ## Phase boundaries
 
-0: bootstrap/tooling (complete); 1: design system (current); 2: contracts/API boundary/MSW;
-3: shared UI/domain/map/journey components; 4: Plan a Journey; 5: Optimised Route;
+0: bootstrap/tooling; 1: design system; 2: contracts/API boundary/MSW;
+3: shared UI primitives and application shell (complete); 4: Plan a Journey; 5: Optimised Route;
 6: Journey Details and modals; 7: Saved Journeys; 8: Shared Trips; 9: refactor,
 QA and integration readiness. Later phases extend these boundaries as needed.

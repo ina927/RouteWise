@@ -1,0 +1,84 @@
+.group {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-inline-size: 0;
+}
+.legend {
+  padding: 0;
+  margin-block-end: var(--space-2);
+  font: var(--font-label);
+}
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  padding: var(--border-width);
+  border: var(--border-width) solid var(--color-border-control);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+}
+.option {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-inline-size: 0;
+}
+.input {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  clip-path: inset(50%);
+  overflow: hidden;
+}
+.content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--control-content-gap);
+  inline-size: 100%;
+  min-block-size: var(--control-height-default);
+  padding: var(--space-2) var(--control-padding-inline);
+  border: var(--border-width-emphasis) solid transparent;
+  border-radius: var(--radius-control);
+  font: var(--font-control);
+  color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
+  text-align: center;
+  cursor: pointer;
+}
+.content svg {
+  inline-size: var(--icon-size-md);
+  block-size: var(--icon-size-md);
+  stroke-width: var(--icon-stroke-width);
+  flex: none;
+}
+.option:hover .input:not(:disabled):not(:checked) + .content {
+  background: var(--color-surface-hover);
+}
+.input:checked + .content {
+  background: var(--color-primary);
+  color: var(--color-text-on-solid);
+  border-color: var(--color-primary-active);
+}
+.input:focus-visible + .content {
+  outline: var(--focus-ring-width) solid var(--color-focus-ring);
+  outline-offset: var(--focus-ring-offset);
+  position: relative;
+  z-index: 1;
+}
+.input:disabled + .content {
+  background: var(--color-disabled-surface);
+  color: var(--color-disabled-text);
+  cursor: not-allowed;
+}
+.input:disabled:checked + .content {
+  border-color: var(--color-disabled-text);
+}
+@media (forced-colors: active) {
+  .input:checked + .content {
+    border-color: Highlight;
+  }
+  .input:focus-visible + .content {
+    outline-color: Highlight;
+  }
+}

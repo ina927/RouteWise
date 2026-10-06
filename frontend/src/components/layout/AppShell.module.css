@@ -1,0 +1,24 @@
+.shell {
+  display: grid;
+  grid-template-columns: var(--layout-sidebar-width) minmax(0, 1fr);
+  align-items: start;
+  min-block-size: 100dvh;
+}
+.main {
+  min-inline-size: 0;
+  padding: var(--layout-page-gutter);
+  overflow-wrap: anywhere;
+}
+.skip {
+  position: fixed;
+  inset-block-start: var(--space-3);
+  inset-inline-start: var(--space-3);
+  z-index: 1;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  transform: translateY(calc(-100% - var(--space-6)));
+}
+.skip:focus {
+  transform: translateY(0);
+}

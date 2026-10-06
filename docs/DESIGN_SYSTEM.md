@@ -37,9 +37,10 @@ Names in this table omit the `--color-` prefix.
 | `background`, `surface`, `surface-muted` | `#F8FAFC`, `#FFFFFF`, `#F1F5F9` | Canvas, panels, supporting areas |
 | `surface-hover`, `surface-pressed` | `#F1F5F9`, `#E2E8F0` | Neutral interactive surfaces |
 | `text`, `text-secondary`, `text-muted` | `#10172B`, `#536078`, `#667085` | Main text, supporting copy, captions/placeholders |
-| `text-on-solid` | `#FFFFFF` | Text on primary/danger/route solid backgrounds |
+| `text-on-solid` | `#FFFFFF` | Text on primary/danger/route/notification solid backgrounds |
 | `primary`, `primary-hover`, `primary-active` | `#0062F5`, `#0053D6`, `#0044B3` | Actions, links, blue stop identity; hover/pressed variants |
 | `selected-surface`, `selected-text`, `selected-border` | `#EAF2FF`, primary-active, primary | Persistent selection and active navigation |
+| `notification` | `#D83A52` | Red pending-count notification badges from the approved Shared Trips design |
 | `route`, `route-surface`, `route-text` | `#D83A52`, `#FFF1F3`, `#A82C40` | Route/endpoints, light route tint, text on that tint |
 | `danger`, `danger-hover`, `danger-active`, `danger-surface` | `#B42318`, `#912018`, `#7A271A`, `#FEF3F2` | Destructive actions and feedback |
 | `error`, `error-surface` | danger, danger-surface | Validation feedback; independently named intent |
@@ -53,6 +54,10 @@ The blue preserves the references' cobalt character. Coral is slightly deeper
 than some reference pins to support white details. **Route colour never means
 deletion or an error.** Keep route and danger semantics separate. Use route-text
 on route-surface, not route itself.
+
+Notification, route and danger are independent semantic roles. Notification
+currently shares route coral's visual hue, but has its own literal colour token;
+pending invitations are neither destructive actions nor validation errors.
 
 Muted text and control boundaries are stronger than the faintest mockup values
 for readability. Structural borders are decorative; use border-control when a
@@ -196,3 +201,28 @@ copy raw palette values into modules or create global tokens for one-off feature
 ratios. Add/document a token only when a real shared responsibility is missing.
 No product components, screens, contracts/API, mocks, maps or business behaviour
 are implemented in this phase.
+
+## Phase 3 component conventions
+
+Shared CSS Modules consume the Phase 1 tokens plus one notification-specific
+colour token required by the approved design. Controls use the default minimum height, semantic fonts, shared icon
+dimensions/stroke, control radius and global focus outline. Input/select labels
+and messages share Field styles; SearchInput composes TextInput. IconButton reuses
+Button's variants and a control-sized hit target. Radio selection also has a
+border indicator; the switch communicates state with thumb position.
+
+AppShell uses the sidebar-width and fluid page-gutter tokens with a shrinkable
+main column. Header actions wrap. Sidebar uses outlined Lucide icons throughout,
+including MapPinned with the RouteWise wordmark instead of inventing a custom
+logo asset. Active navigation adds an edge indicator as well as selection colour.
+Pending-count notification badges use the red `--color-notification` token from
+the approved Shared Trips design, with `--color-text-on-solid` text. Route and
+danger tokens retain their separate meanings. Counts above 99 display `99+`
+while the accessible name contains the full externally supplied count.
+
+Modal uses section-title typography, surface radius, overlay colour and overlay
+shadow. Its local 34rem maximum width is a container choice, not a new global
+scale; it contracts to the viewport and scrolls for long content. All modals
+include a labelled close button, including compositions based on the Save
+reference. Select retains the native operating-system option popup. These are
+intentional accessibility/consistency choices, not screenshot-specific styling.
