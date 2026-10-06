@@ -7,7 +7,7 @@ import globals from 'globals'
 import tseslint from 'typescript-eslint'
 
 export default defineConfig([
-  globalIgnores(['dist', 'coverage']),
+  globalIgnores(['dist', 'coverage', 'public/mockServiceWorker.js']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [js.configs.recommended, tseslint.configs.recommendedTypeChecked],
@@ -24,7 +24,7 @@ export default defineConfig([
     languageOptions: { globals: globals.browser },
   },
   {
-    files: ['**/*.js', 'vite.config.ts'],
+    files: ['**/*.{js,mjs}', 'vite.config.ts'],
     extends: [js.configs.recommended],
     languageOptions: { globals: globals.node },
   },
