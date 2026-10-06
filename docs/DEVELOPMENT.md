@@ -76,8 +76,21 @@ permission is requested. Suggestions include Google Maps attribution.
 Script/network timeout and Google authentication failures surface restrained
 unavailable states; place request failures stay inline. After correcting key/API
 permissions, reload the page to retry initialization. A full reload clears the
-planning draft and original result by design. Live Google success needs valid
+planning draft and retained route results by design. Live Google success needs valid
 project credentials; controlled browser test responses do not verify that setup.
+
+Phase 5 consumes route order, metrics and geometry through the existing RouteWise
+API/MSW boundary. MSW geometry is development data, not navigable road geometry.
+The Google adapter presents `RouteResult.segments[].path` with Polyline and
+[static dashed symbols](https://developers.google.com/maps/documentation/javascript/examples/overlay-symbol-dashed)
+for the selected segment. It does not request Google Routes or calculate costs.
+
+Frontend/Ina owns the browser Maps JavaScript/Places key and configuration.
+Backend/Zoe separately owns Google Routes and route-cost configuration. No shared
+Google account, project, billing or key is assumed. Live frontend Google testing
+is pending billing activation; this does not block MSW-based route development.
+Real tiles, Advanced Markers, route polylines and dashed appearance still require
+live verification. Temporary SDK doubles verify wiring only and are not shipped.
 
 All `VITE_` values can be included in browser code; they are not secret storage.
 Never put backend credentials in them. Use environment variables or .NET user
@@ -106,8 +119,9 @@ JavaScript output. Compiler caches live under ignored `node_modules/.tmp`.
 Phase 1 uses `@fontsource-variable/inter` through the global stylesheet. Font
 files are bundled locally during the Vite build; no font CDN or API key is needed.
 Use [Design system](DESIGN_SYSTEM.md) for token values and usage rules. The root
-route redirects to Plan; there is no component gallery. The neutral `/plan/route`
-boundary is replaced by the Optimised Route UI in Phase 5.
+route redirects to Plan; there is no component gallery. `/plan/route` renders the
+Optimised Route UI only with an in-memory successful result. A fresh direct visit
+redirects to Plan. Save journey is disabled pending Phase 6.
 
 The NUnit project references the API but intentionally has no test source files.
 The test command should build and run discovery successfully; a "No test is
@@ -121,7 +135,7 @@ Keep npm lockfile changes with dependency changes. Review `git diff` and
 are ignored by the root `.gitignore`. Shared VS Code settings/extensions may be
 tracked if the team later needs them; user-specific files should stay local.
 
-Phases 0-3 are frozen foundations; Phase 4 remains on the existing `ina-frontend`
+Phases 0-4 are frozen foundations; Phase 5 remains on the existing `ina-frontend`
 branch for manual QA and commit by the owner.
 Agree cross-team contract changes before implementation. Follow the phase
 boundaries in [Frontend architecture](FRONTEND_ARCHITECTURE.md) and the approved

@@ -1,6 +1,6 @@
 # Frontend architecture direction
 
-## Current foundation (Phases 0-4)
+## Current foundation (Phases 0-5)
 
 `src/main.tsx` mounts React under StrictMode and imports `styles/global.css`.
 `app/App.tsx` composes `AppProviders` with the central router. `AppProviders.tsx`
@@ -13,7 +13,7 @@ Phase 1 adds `styles/tokens.css` and a self-hosted Inter font, both loaded by
 Vite handles CSS Modules natively. Phase 2 provides frontend contracts, fetch
 modules and MSW handlers; contracts remain pending backend-team review. Phase 3
 adds shared layout and UI components without mounting feature pages or changing
-the router. Maps, journey presentation and feature orchestration remain later work.
+the router. Phases 4-5 add planning and route presentation within this foundation.
 
 ## Shared UI foundation (Phase 3)
 
@@ -46,8 +46,8 @@ No permanent component gallery, JourneyCard or product modal is included.
 
 `features/journey-planning/PlanningLayout` owns a React context scoped to `/plan`
 and `/plan/route`. It retains editable query/Place rows, stable occurrence IDs,
-nullable mode/objective/end mode, the submitted request snapshot and the original
-successful result. Full reload or leaving this route scope clears memory; there
+nullable mode/objective/end mode and the route state described below.
+Full reload or leaving this route scope clears memory; there
 is no browser storage or application-wide store. Fixed End state stays in the
 draft even when its field is unmounted. Typed text alone is never a Place.
 
@@ -56,12 +56,12 @@ EndModeSelector and JourneyPlanMap. `planning.ts` builds a transport request onl
 when confirmed requirements are met. The counter counts selected occurrences;
 add-row capacity additionally reserves the active mode's endpoint slots and caps
 empty rows. No selected input is deleted on mode changes. Unselected search text
-and blank rows are omitted from submission, as indicated in the form helper.
+and blank rows are omitted from submission.
 
 Find route uses a TanStack mutation through `routesApi.optimizeRoute`, with an
 immediate in-flight guard, disabled controls, abort on unmount, and inline errors.
 Success stores the submitted configuration/result and navigates to `/plan/route`.
-RouteBoundary contains only neutral Phase 5-pending text; direct access without
+RouteBoundary renders OptimisedRoutePage; direct access without
 an in-memory result redirects to `/plan`. The Plan sidebar intent returns to the
 preserved draft. Saved/Shared/Account remain visible and disabled.
 
@@ -70,8 +70,56 @@ autocomplete session tokens, requested place fields, and map/marker instances.
 Only application-owned Place data and a small suggestion selection callback
 cross into the feature. Search uses a 300ms debounce and discards stale responses.
 The map uses Advanced Markers, reads existing CSS colour tokens, and draws no
-route lines or numbers. A neutral world view is an implementation default, never
+route lines or numbers on Plan. A neutral world view is an implementation default, never
 a Places search bias. At narrower desktop widths the feature grid stacks.
+
+## Optimised Route (Phase 5)
+
+`features/route-optimisation` owns the result page, route-update hook, stop list,
+map presentation and small metre/second formatters. PlanningLayout still owns
+the in-memory state shared by both routes; no application-wide store was added.
+
+`PlanningResult` contains:
+
+- `request`: the last successful optimisation's submitted planning problem/settings.
+- `optimisedRoute`: the latest successful optimisation baseline.
+- `currentRoute`: the currently displayed successful result.
+- `modified`: true after manual calculation, cleared by optimisation or Reset.
+
+Plan submission initialises both results. Mode/objective changes immediately call
+the existing `optimizeRoute()` through a TanStack mutation, preserving the submitted
+places and end configuration independently of current manual order. Successful
+updates replace both results and copy only mode/objective into the editable draft.
+Failures retain the last valid result and restore its successful settings. Abort
+controllers plus request-identity checks discard superseded/unmounted responses.
+Controls remain available for rapid optimisation changes; drag and Reset are
+disabled while updating. Exact-order calculation also disables setting changes.
+
+Only intermediate rows register with dnd-kit, using explicit handles and keyboard
+sensors. Drop submits the exact new order to `calculateRoute()` without objective.
+The old valid list/metrics remain until success; failures preserve them. Manual
+calculation never changes the baseline. Reset clones the retained baseline locally,
+without either API call. Edit places simply navigates back, preserving input rows,
+queries, inactive Fixed End and the latest successful settings.
+
+Segment hover/focus and click selection are page-local UI state keyed by segment
+ID. Clicking a selected segment clears it; invalid IDs are pruned when the result
+changes. Neither interaction calls the API or fits the map. Numbering is derived
+from displayed order; Start/End (including Open End's actual final point) are fixed.
+
+The existing Google adapter shares loading, initialisation, colours and bounds
+between Plan and Route maps. Route rendering draws only `segments[].path`, with
+solid coral lines, static thicker hover emphasis and a dashed selected segment.
+Static dashes require no motion exception. All path coordinates participate in
+route fitting, which occurs on result/size changes, never on highlight changes.
+Co-located Start/End share a visible coral pin labelled Start / End; both occurrence
+IDs remain distinct in the list and route state. Intermediates have blue numbered
+pins. Map failure does not disable non-map route interactions.
+
+Save journey is a native disabled button in its intended location; Phase 6 owns
+its modal and persistence. No new dependency or shared-component API was added.
+`dnd-kit-compat.d.ts` supplies React 19 JSX type aliases needed by the installed
+dnd-kit declarations, without disabling library type checking.
 
 ## Future responsibilities
 
@@ -136,6 +184,6 @@ Comments should explain non-obvious intent, not restate code.
 ## Phase boundaries
 
 0: bootstrap/tooling; 1: design system; 2: contracts/API boundary/MSW;
-3: shared UI primitives and application shell; 4: Plan a Journey (complete); 5: Optimised Route;
+3: shared UI primitives and application shell; 4: Plan a Journey (complete); 5: Optimised Route (complete; live Google verification pending);
 6: Journey Details and modals; 7: Saved Journeys; 8: Shared Trips; 9: refactor,
 QA and integration readiness. Later phases extend these boundaries as needed.

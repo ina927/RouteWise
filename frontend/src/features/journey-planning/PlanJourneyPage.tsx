@@ -116,7 +116,12 @@ export function PlanJourneyPage() {
     try {
       const result = await mutation.mutateAsync(snapshot)
       if (controller.signal.aborted) return
-      setResult({ request: snapshot, originalRoute: structuredClone(result) })
+      setResult({
+        request: snapshot,
+        optimisedRoute: structuredClone(result),
+        currentRoute: structuredClone(result),
+        modified: false,
+      })
       await navigate('/plan/route')
     } catch {
       // TanStack exposes the failure inline. The editable draft remains intact.

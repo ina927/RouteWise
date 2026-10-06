@@ -4,10 +4,11 @@ RouteWise is a desktop-first, single-day travel itinerary optimiser. Travellers
 choose places they already want to visit; the C# backend will recommend an efficient
 visiting order using Simulated Annealing.
 
-**Current phase: Phase 4, Plan a Journey.** `/` redirects to `/plan`, the first
-product screen. Shared design tokens/components and the proposed frontend API/MSW
-boundary support place selection, map pins and optimisation submission. Successful
-submission reaches `/plan/route`, a neutral boundary awaiting Phase 5 UI.
+**Current phase: Phase 5, Optimised Route.** `/` redirects to `/plan` for place
+selection and optimisation submission. `/plan/route` displays route order,
+totals/segments, automatic re-optimisation on setting changes, intermediate-only
+reordering via exact-order calculation, and local Reset to the latest successful
+optimised baseline. Save journey remains disabled until Phase 6.
 The C# API still exposes only `GET /api/health`; product endpoints use MSW locally.
 
 ## Stack and structure
@@ -18,8 +19,9 @@ The C# API still exposes only `GET /api/health`; product endpoints use MSW local
 - `docs/`: scope, frontend direction, contract ownership and development guide.
 - `RouteWise.sln`: the two .NET projects; the frontend uses npm separately.
 
-SQLite, EF Core, LINQ and Google Maps / Places / Routes integration belong to later
-implementation. Frontend development uses MSW behind an HTTP API boundary before
+SQLite, EF Core, LINQ and backend Google Routes integration belong to later
+implementation. Frontend Maps/Places presentation is implemented; live Google
+verification awaits browser-key/billing activation. Frontend development uses MSW behind an HTTP API boundary before
 connecting real backend endpoints. Phase 2 contracts still await backend review.
 
 ## Team

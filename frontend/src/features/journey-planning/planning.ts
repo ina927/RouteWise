@@ -19,7 +19,9 @@ export type PlanningDraft = {
 }
 export type PlanningResult = {
   request: OptimizeRouteRequest
-  originalRoute: RouteResult
+  optimisedRoute: RouteResult
+  currentRoute: RouteResult
+  modified: boolean
 }
 
 export function emptyPlace(): PlaceDraft {

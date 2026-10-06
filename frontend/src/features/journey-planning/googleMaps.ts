@@ -1,4 +1,5 @@
 import type { Coordinates, Place } from '../../contracts/places.ts'
+import type { RouteResult } from '../../contracts/routes'
 
 // Only the SDK members used by this adapter are described here. Vendor objects
 // never enter React draft state or the HTTP contracts; no wrapper dependency.
@@ -35,6 +36,7 @@ type MapInstance = {
   getMapCapabilities: () => { isAdvancedMarkersAvailable?: boolean }
 }
 type MapsLibrary = {
+  Polyline: new (options: LineOptions) => Polyline
   Map: new (
     element: HTMLElement,
     options: {
@@ -47,6 +49,30 @@ type MapsLibrary = {
     },
   ) => MapInstance
 }
+type LineOptions = {
+  map?: MapInstance
+  path?: Coordinates[]
+  strokeColor?: string
+  strokeOpacity?: number
+  strokeWeight?: number
+  clickable?: boolean
+  zIndex?: number
+  icons?: {
+    icon: {
+      path: string
+      strokeColor: string
+      strokeOpacity: number
+      strokeWeight: number
+      scale: number
+    }
+    offset: string
+    repeat: string
+  }[]
+}
+type Polyline = {
+  setMap: (map: MapInstance | null) => void
+  setOptions: (options: LineOptions) => void
+}
 type Marker = HTMLElement & { map: MapInstance | null }
 type MarkerLibrary = {
   AdvancedMarkerElement: new (options: {
@@ -58,6 +84,7 @@ type MarkerLibrary = {
     background: string
     borderColor: string
     glyphColor: string
+    glyphText?: string
   }) => HTMLElement
 }
 type GoogleWindow = Window &
@@ -232,11 +259,11 @@ export type PlanMap = {
   dispose: () => void
 }
 
-export async function createPlanMap(
+async function createMapScene(
   element: HTMLElement,
   onFailure: () => void,
   signal: AbortSignal,
-): Promise<PlanMap> {
+) {
   const runtime = await loadGoogle()
   const maps = (await bounded(runtime.importLibrary('maps'))) as MapsLibrary
   const markersLibrary = (await bounded(
@@ -256,30 +283,20 @@ export async function createPlanMap(
     if (map.getMapCapabilities().isAdvancedMarkersAvailable === false)
       onFailure()
   })
-  let markers: Marker[] = []
-  let current: PlanMarker[] = []
-  function clear() {
-    markers.forEach((marker) => {
-      marker.map = null
-    })
-    markers = []
-  }
+  let coordinates: Coordinates[] = []
   function fit() {
-    const first = current[0]
+    const first = coordinates[0]
     if (!first) {
       map.setCenter(neutral)
       map.setZoom(2)
       return
     }
-    const coordinates = current.map((point) => point.place.coordinates)
     if (
       coordinates.every(
-        (point) =>
-          point.lat === first.place.coordinates.lat &&
-          point.lng === first.place.coordinates.lng,
+        (point) => point.lat === first.lat && point.lng === first.lng,
       )
     ) {
-      map.setCenter(first.place.coordinates)
+      map.setCenter(first)
       map.setZoom(14)
       return
     }
@@ -313,39 +330,194 @@ export async function createPlanMap(
   }
   const observer = new ResizeObserver(() => fit())
   observer.observe(element)
+  const css = getComputedStyle(element)
+  const colours = {
+    solid: css.getPropertyValue('--color-text-on-solid').trim(),
+    primary: css.getPropertyValue('--color-primary').trim(),
+    route: css.getPropertyValue('--color-route').trim(),
+  }
   return {
-    update(points) {
-      current = points
-      clear()
-      const css = getComputedStyle(element)
-      const solid = css.getPropertyValue('--color-text-on-solid').trim()
-      markers = points.map((point) => {
-        const background = css
-          .getPropertyValue(
-            point.role === 'intermediate' ? '--color-primary' : '--color-route',
-          )
-          .trim()
-        const marker = new markersLibrary.AdvancedMarkerElement({
-          map,
-          position: point.place.coordinates,
-          title: `${point.role === 'intermediate' ? 'Place to visit' : point.role === 'start' ? 'Start' : 'End'}: ${point.place.name}`,
-        })
-        marker.append(
-          new markersLibrary.PinElement({
-            background,
-            borderColor: solid,
-            glyphColor: solid,
-          }),
-        )
-        return marker
-      })
+    map,
+    maps,
+    colours,
+    fit(points: Coordinates[]) {
+      coordinates = points
       fit()
+    },
+    marker(
+      position: Coordinates,
+      title: string,
+      intermediate: boolean,
+      number?: number,
+    ) {
+      const marker = new markersLibrary.AdvancedMarkerElement({
+        map,
+        position,
+        title,
+      })
+      marker.append(
+        new markersLibrary.PinElement({
+          background: intermediate ? colours.primary : colours.route,
+          borderColor: colours.solid,
+          glyphColor: colours.solid,
+          ...(number === undefined ? {} : { glyphText: String(number) }),
+        }),
+      )
+      return marker
     },
     dispose() {
       observer.disconnect()
       capabilities.remove()
-      clear()
       element.replaceChildren()
+    },
+  }
+}
+
+export async function createPlanMap(
+  element: HTMLElement,
+  onFailure: () => void,
+  signal: AbortSignal,
+): Promise<PlanMap> {
+  const scene = await createMapScene(element, onFailure, signal)
+  let markers: Marker[] = []
+  function clear() {
+    markers.forEach((marker) => {
+      marker.map = null
+    })
+    markers = []
+  }
+  return {
+    update(points) {
+      clear()
+      markers = points.map((point) =>
+        scene.marker(
+          point.place.coordinates,
+          `${point.role === 'intermediate' ? 'Place to visit' : point.role === 'start' ? 'Start' : 'End'}: ${point.place.name}`,
+          point.role === 'intermediate',
+        ),
+      )
+      scene.fit(points.map((point) => point.place.coordinates))
+    },
+    dispose() {
+      clear()
+      scene.dispose()
+    },
+  }
+}
+
+export type RouteMap = {
+  update: (route: RouteResult) => void
+  highlight: (hovered: string | null, selected: string | null) => void
+  dispose: () => void
+}
+
+export async function createRouteMap(
+  element: HTMLElement,
+  onFailure: () => void,
+  signal: AbortSignal,
+): Promise<RouteMap> {
+  const scene = await createMapScene(element, onFailure, signal)
+  let markers: Marker[] = []
+  let lines: { id: string; halo: Polyline; line: Polyline }[] = []
+  function clear() {
+    markers.forEach((marker) => {
+      marker.map = null
+    })
+    lines.forEach(({ halo, line }) => {
+      halo.setMap(null)
+      line.setMap(null)
+    })
+    markers = []
+    lines = []
+  }
+  return {
+    update(route) {
+      clear()
+      const first = route.points[0]
+      const last = route.points.at(-1)
+      const sharedEndpoint =
+        first &&
+        last &&
+        first.place.coordinates.lat === last.place.coordinates.lat &&
+        first.place.coordinates.lng === last.place.coordinates.lng
+      markers = route.points.flatMap((point, index) => {
+        // The list retains both occurrences; co-located endpoints share one visible pin.
+        if (sharedEndpoint && index === route.points.length - 1) return []
+        const intermediate = index > 0 && index < route.points.length - 1
+        const label = intermediate
+          ? `Stop ${index}`
+          : index === 0
+            ? sharedEndpoint
+              ? 'Start / End'
+              : 'Start'
+            : 'End'
+        return [
+          scene.marker(
+            point.place.coordinates,
+            `${label}: ${point.place.name}`,
+            intermediate,
+            intermediate ? index : undefined,
+          ),
+        ]
+      })
+      // Draw only supplied segment geometry, never derive road paths from places.
+      lines = route.segments.map((segment) => ({
+        id: segment.id,
+        halo: new scene.maps.Polyline({
+          map: scene.map,
+          path: segment.path,
+          clickable: false,
+          strokeColor: scene.colours.solid,
+          strokeOpacity: 1,
+          strokeWeight: 8,
+          zIndex: 1,
+        }),
+        line: new scene.maps.Polyline({
+          map: scene.map,
+          path: segment.path,
+          clickable: false,
+          strokeColor: scene.colours.route,
+          strokeOpacity: 1,
+          strokeWeight: 4,
+          zIndex: 2,
+        }),
+      }))
+      scene.fit([
+        ...route.points.map((point) => point.place.coordinates),
+        ...route.segments.flatMap((segment) => segment.path),
+      ])
+    },
+    highlight(hovered, selected) {
+      lines.forEach(({ id, line, halo }) => {
+        const chosen = id === selected
+        const preview = id === hovered
+        halo.setOptions({ strokeWeight: chosen || preview ? 10 : 8 })
+        line.setOptions({
+          strokeOpacity: chosen ? 0 : 1,
+          strokeWeight: preview ? 6 : 4,
+          zIndex: chosen || preview ? 3 : 2,
+          icons: chosen
+            ? [
+                {
+                  icon: {
+                    path: 'M 0,-1 0,1',
+                    strokeColor: scene.colours.route,
+                    strokeOpacity: 1,
+                    strokeWeight: 5,
+                    scale: 3,
+                  },
+                  offset: '0',
+                  repeat: '16px',
+                },
+              ]
+            : [],
+        })
+      })
+      // Highlight changes never fit bounds or zoom; static dashes respect reduced motion.
+    },
+    dispose() {
+      clear()
+      scene.dispose()
     },
   }
 }
