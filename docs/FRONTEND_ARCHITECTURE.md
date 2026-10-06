@@ -1,6 +1,6 @@
 # Frontend architecture direction
 
-## Current foundation (Phases 0-5)
+## Current foundation (Phases 0-6)
 
 `src/main.tsx` mounts React under StrictMode and imports `styles/global.css`.
 `app/App.tsx` composes `AppProviders` with the central router. `AppProviders.tsx`
@@ -116,10 +116,55 @@ Co-located Start/End share a visible coral pin labelled Start / End; both occurr
 IDs remain distinct in the list and route state. Intermediates have blue numbered
 pins. Map failure does not disable non-map route interactions.
 
-Save journey is a native disabled button in its intended location; Phase 6 owns
-its modal and persistence. No new dependency or shared-component API was added.
+Phase 6 activates Save journey without changing route-update/reset behaviour.
+No new dependency or Phase 3 shared-component API was added.
 `dnd-kit-compat.d.ts` supplies React 19 JSX type aliases needed by the installed
 dnd-kit declarations, without disabling library type checking.
+
+## Save Journey and Journey Details (Phase 6)
+
+`features/journey-details` owns SaveJourneyModal, JourneyDetailsPage, the itinerary,
+small explicit-save field editor, PlacePhoto and the query/update helpers.
+The save modal captures a clone of the currently displayed route and its last
+successful settings when opened, including a manually modified route. Pending
+route changes do not alter this snapshot. Creation uses a trimmed required name,
+optional calendar date and empty annotations; it never routes or optimises.
+Duplicate submission and closing during submission are blocked. Failure retains
+the form; success caches the returned Journey and navigates to its returned ID.
+
+`/journeys/:journeyId` is outside PlanningLayout. `getJourney(id)` and the TanStack
+Query key `['journey', id]` own server state. Direct/refresh access fetches the API,
+with loading, unavailable and not-found states rather than a Plan redirect.
+The approved `Plan a journey` action goes to `/plan` and starts a fresh planning
+session; leaving PlanningLayout clears its previous memory. Unimplemented sidebar
+destinations remain disabled and Details marks no sidebar destination active.
+
+Owner fields use one editor at a time with Save/Cancel (and Clear for optional
+fields). Unchanged values do not submit. Successful responses replace the query
+cache; failures keep the last server state and editing input. A synchronous guard
+serialises updates, and annotation replacements merge against the latest cached
+Journey by RoutePoint.id. Notes and manual HH:mm times preserve each other and all
+other occurrences. Empty annotations are removed. Clearing date sends null.
+No timezone conversion, scheduling or route API call is involved.
+
+Itinerary is the default local tab; keyboard arrows/Home/End switch tabs. Plan
+times is presentation only, initially on when saved times exist; hiding it never
+deletes values. Shared access shows notes/times and an explicit read-only label,
+with no edit controls or mutation path. Map View uses a compact read-only itinerary
+alongside the existing OptimisedRouteMap with context-appropriate fallback copy.
+Saved segment geometry and Phase 5 metric formatters are reused unchanged.
+
+Intermediate photo slots call `getPlacePhoto(placeId)` within the existing Google
+adapter. It requests only photos, obtains a transient URI with getURI and maps
+author attribution into presentation data. No vendor object or photo field enters
+Journey contracts, API requests or persistent storage. Start/End have no photo.
+Unavailable/no-photo/broken-image cases use a neutral slot. Successful images show
+Google Maps and supplied author attribution. Live Google verification is pending.
+
+MSW remains per-tab memory and resets on full reload. Seeded detail IDs verify
+refresh loading; newly created journeys and edits do not survive that reset.
+Durable persistence verification awaits the backend. No browser persistence,
+Saved/Shared listing, sharing workflow or backend implementation is added here.
 
 ## Future responsibilities
 
@@ -185,5 +230,5 @@ Comments should explain non-obvious intent, not restate code.
 
 0: bootstrap/tooling; 1: design system; 2: contracts/API boundary/MSW;
 3: shared UI primitives and application shell; 4: Plan a Journey (complete); 5: Optimised Route (complete; live Google verification pending);
-6: Journey Details and modals; 7: Saved Journeys; 8: Shared Trips; 9: refactor,
+6: Save Journey and Journey Details (implemented; live Google verification pending); 7: Saved Journeys; 8: Shared Trips; 9: refactor,
 QA and integration readiness. Later phases extend these boundaries as needed.

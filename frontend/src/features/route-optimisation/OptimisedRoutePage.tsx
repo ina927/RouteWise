@@ -14,6 +14,8 @@ import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { SegmentedControl } from '../../components/ui/SegmentedControl'
 import type { PlanningResult } from '../journey-planning/planning'
+import type { JourneyPlan } from '../../contracts/journeys'
+import { SaveJourneyModal } from '../journey-details/SaveJourneyModal'
 import { useRouteUpdates } from './useRouteUpdates'
 import { formatDistance, formatDuration } from './formatters'
 import { RouteStopList } from './components/RouteStopList'
@@ -24,6 +26,7 @@ export function OptimisedRoutePage({ result }: { result: PlanningResult }) {
   const navigate = useNavigate()
   const updates = useRouteUpdates(result)
   const route = result.currentRoute
+  const [savePlan, setSavePlan] = useState<JourneyPlan | null>(null)
   const [interaction, setInteraction] = useState<{
     route: typeof route
     hovered: string | null
@@ -156,7 +159,20 @@ export function OptimisedRoutePage({ result }: { result: PlanningResult }) {
               </Button>
             </div>
           )}
-          <Button leadingIcon={Bookmark} className={styles.save} disabled>
+          <Button
+            leadingIcon={Bookmark}
+            className={styles.save}
+            onClick={() =>
+              setSavePlan(
+                structuredClone({
+                  travelMode: result.request.travelMode,
+                  objective: result.request.objective,
+                  endMode: result.request.endMode,
+                  route,
+                }),
+              )
+            }
+          >
             Save journey
           </Button>
         </section>
@@ -166,6 +182,9 @@ export function OptimisedRoutePage({ result }: { result: PlanningResult }) {
           selectedSegmentId={interaction.selected}
         />
       </div>
+      {savePlan && (
+        <SaveJourneyModal plan={savePlan} onClose={() => setSavePlan(null)} />
+      )}
     </>
   )
 }

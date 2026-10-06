@@ -12,10 +12,12 @@ export function OptimisedRouteMap({
   route,
   hoveredSegmentId,
   selectedSegmentId,
+  unavailableDescription = 'Maps cannot load right now. You can still review and edit your route.',
 }: {
   route: RouteResult
   hoveredSegmentId: string | null
   selectedSegmentId: string | null
+  unavailableDescription?: string
 }) {
   const container = useRef<HTMLDivElement>(null)
   const [map, setMap] = useState<RouteMap | null>(null)
@@ -62,7 +64,7 @@ export function OptimisedRouteMap({
           <p>{unavailable ? 'Map unavailable' : 'Loading map…'}</p>
           <span>
             {unavailable
-              ? 'Maps cannot load right now. You can still review and edit your route.'
+              ? unavailableDescription
               : 'Your route will appear here.'}
           </span>
         </div>

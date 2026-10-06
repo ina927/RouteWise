@@ -121,7 +121,22 @@ files are bundled locally during the Vite build; no font CDN or API key is neede
 Use [Design system](DESIGN_SYSTEM.md) for token values and usage rules. The root
 route redirects to Plan; there is no component gallery. `/plan/route` renders the
 Optimised Route UI only with an in-memory successful result. A fresh direct visit
-redirects to Plan. Save journey is disabled pending Phase 6.
+redirects to Plan. Save journey now opens the Phase 6 modal and navigates to
+`/journeys/:journeyId` after creation. With MSW enabled, direct details examples are
+`/journeys/journey-harbour` (owner, Return to Start), `/journeys/journey-city`
+(owner, Open End), and `/journeys/journey-museum` (shared/read-only).
+MSW resets on full refresh: seeded journeys load again, but created journeys and
+edits are lost. Missing IDs show not-found; they never redirect due to missing
+planning memory. Durable save/refresh verification awaits the backend.
+
+Intermediate Places photos use the existing browser Google boundary:
+`new Place({ id })`, `fetchFields({ fields: ['photos'] })`, and `Photo.getURI`.
+See [Place Photos](https://developers.google.com/maps/documentation/javascript/place-photos)
+and [attribution requirements](https://developers.google.com/maps/documentation/javascript/policies).
+Photo URIs are transient UI data only. Neutral slots keep Details usable without
+Google; fixture place IDs are synthetic and cannot return real photos.
+Live photo results, image attribution, tiles, markers and polylines remain
+**PENDING LIVE GOOGLE VERIFICATION**; MSW checks do not verify Google billing.
 
 The NUnit project references the API but intentionally has no test source files.
 The test command should build and run discovery successfully; a "No test is
@@ -135,7 +150,7 @@ Keep npm lockfile changes with dependency changes. Review `git diff` and
 are ignored by the root `.gitignore`. Shared VS Code settings/extensions may be
 tracked if the team later needs them; user-specific files should stay local.
 
-Phases 0-4 are frozen foundations; Phase 5 remains on the existing `ina-frontend`
+Phases 0-5 are frozen foundations; Phase 6 remains on the existing `ina-frontend`
 branch for manual QA and commit by the owner.
 Agree cross-team contract changes before implementation. Follow the phase
 boundaries in [Frontend architecture](FRONTEND_ARCHITECTURE.md) and the approved

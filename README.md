@@ -4,11 +4,13 @@ RouteWise is a desktop-first, single-day travel itinerary optimiser. Travellers
 choose places they already want to visit; the C# backend will recommend an efficient
 visiting order using Simulated Annealing.
 
-**Current phase: Phase 5, Optimised Route.** `/` redirects to `/plan` for place
+**Current phase: Phase 6, Save Journey and Journey Details.** `/` redirects to `/plan` for place
 selection and optimisation submission. `/plan/route` displays route order,
 totals/segments, automatic re-optimisation on setting changes, intermediate-only
 reordering via exact-order calculation, and local Reset to the latest successful
-optimised baseline. Save journey remains disabled until Phase 6.
+optimised baseline. Save journey stores the displayed route snapshot and opens
+`/journeys/:journeyId`. Details loads through the API independently of planning
+memory, with owner metadata/annotation editing and shared read-only presentation.
 The C# API still exposes only `GET /api/health`; product endpoints use MSW locally.
 
 ## Stack and structure

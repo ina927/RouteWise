@@ -6,6 +6,10 @@ import type { RouteResult } from '../../contracts/routes'
 type GoogleRuntime = { importLibrary: (name: string) => Promise<unknown> }
 type GooglePlace = {
   id: string
+  photos?: {
+    getURI: (options: { maxWidth: number; maxHeight: number }) => string
+    authorAttributions: { displayName: string; uri?: string }[]
+  }[]
   displayName?: string | null
   formattedAddress?: string | null
   location?: { lat: () => number; lng: () => number } | null
@@ -17,6 +21,7 @@ type Prediction = {
   toPlace: () => GooglePlace
 }
 type PlacesLibrary = {
+  Place: new (options: { id: string }) => GooglePlace
   AutocompleteSessionToken: new () => object
   AutocompleteSuggestion: {
     fetchAutocompleteSuggestions: (request: {
@@ -246,6 +251,36 @@ export function createPlaceSearch() {
         ]
       })
     },
+  }
+}
+
+// Transient presentation data only; never part of a Journey or persisted cache.
+export type PlacePhotoData = {
+  src: string
+  authors: { name: string; url?: string }[]
+}
+
+export async function getPlacePhoto(
+  placeId: string,
+  signal: AbortSignal,
+): Promise<PlacePhotoData | null> {
+  const runtime = await loadGoogle()
+  signal.throwIfAborted()
+  const library = (await bounded(
+    runtime.importLibrary('places'),
+  )) as PlacesLibrary
+  signal.throwIfAborted()
+  const place = new library.Place({ id: placeId })
+  await bounded(place.fetchFields({ fields: ['photos'] }))
+  signal.throwIfAborted()
+  const photo = place.photos?.[0]
+  if (!photo) return null
+  return {
+    src: photo.getURI({ maxWidth: 400, maxHeight: 300 }),
+    authors: photo.authorAttributions.map((author) => ({
+      name: author.displayName,
+      ...(author.uri ? { url: author.uri } : {}),
+    })),
   }
 }
 
