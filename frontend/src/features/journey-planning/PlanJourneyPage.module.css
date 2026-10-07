@@ -1,0 +1,111 @@
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-6);
+  margin-block-end: var(--space-4);
+}
+.controls > * {
+  flex: 0 1 19rem;
+  min-inline-size: 0;
+}
+.objective {
+  border-inline-start: var(--border-width) solid var(--color-border);
+  padding-inline-start: var(--space-6);
+  flex-basis: 22rem;
+}
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(22rem, 0.85fr) minmax(0, 1.4fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+.builder {
+  display: grid;
+  margin: 0;
+  gap: var(--space-6);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-surface);
+  box-shadow: var(--shadow-subtle);
+  min-inline-size: 0;
+}
+.builder:disabled {
+  background: var(--color-surface-muted);
+}
+.builder:disabled > section,
+.builder:disabled > fieldset {
+  opacity: 0.65;
+}
+.label {
+  font: var(--font-label);
+}
+.startRow {
+  display: grid;
+  grid-template-columns: var(--icon-size-lg) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-3);
+  margin-block-start: var(--space-2);
+}
+.endpoint {
+  inline-size: var(--icon-size-lg);
+  block-size: var(--icon-size-lg);
+  stroke-width: var(--icon-stroke-width);
+  color: var(--color-route);
+  margin-block-start: var(--space-3);
+}
+.sectionHeading {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-block-end: var(--space-1);
+}
+.counter,
+.help {
+  font: var(--font-caption);
+  color: var(--color-text-secondary);
+}
+.places {
+  display: grid;
+  gap: var(--space-3);
+  margin-block: var(--space-3) var(--space-3);
+}
+.placeRow {
+  display: grid;
+  grid-template-columns: var(--icon-size-lg) minmax(0, 1fr) var(
+      --control-height-default
+    );
+  align-items: start;
+  gap: var(--space-2);
+}
+.dot {
+  justify-self: center;
+  inline-size: var(--icon-size-sm);
+  block-size: var(--icon-size-sm);
+  border: var(--border-width-emphasis) solid var(--color-primary);
+  border-radius: var(--radius-full);
+  margin-block-start: var(--space-3);
+}
+.submit {
+  inline-size: 100%;
+  min-block-size: var(--control-height-default);
+}
+.error {
+  color: var(--color-error);
+  font: var(--font-body-secondary);
+}
+.notice {
+  margin-block-end: var(--space-4);
+  color: var(--color-text-secondary);
+  font: var(--font-body-secondary);
+}
+@media (max-width: 60rem) {
+  .workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .controls > * {
+    flex: 1 1 18rem;
+  }
+}

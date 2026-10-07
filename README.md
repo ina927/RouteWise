@@ -4,9 +4,21 @@ RouteWise is a desktop-first, single-day travel itinerary optimiser. Travellers
 choose places they already want to visit; the C# backend will recommend an efficient
 visiting order using Simulated Annealing.
 
-**Current phase: Phase 0, engineering foundation only.** The frontend displays a
-neutral scaffold message. The API exposes only `GET /api/health`. No product
-features or meaningful tests exist yet.
+**Current phase: Phase 8.5, Authentication and Account.** `/` redirects to `/plan` for place
+selection and optimisation submission. `/plan/route` displays route order,
+totals/segments, automatic re-optimisation on setting changes, intermediate-only
+reordering via exact-order calculation, and local Reset to the latest successful
+optimised baseline. Save journey stores the displayed route snapshot and opens
+`/journeys/:journeyId`. Details loads through the API independently of planning
+memory, with owner metadata/annotation editing and shared read-only presentation.
+`/saved` lists owned journeys with search/sort, rename, duplicate and confirmed
+delete. Edit route reuses Plan/Optimised Route and saves the changed plan back to
+the same Journey. `/shared` manages incoming invitations and accepted read-only
+journeys. Owners can search users and invite them from Journey Details. Removing
+a shared journey removes only the recipient relationship. `/login` and `/signup`
+are public; product routes require a username/password session. `/account` displays
+the username and provides logout and confirmed account deletion. Email is excluded.
+The C# API still exposes only `GET /api/health`; product endpoints use MSW locally.
 
 ## Stack and structure
 
@@ -16,10 +28,10 @@ features or meaningful tests exist yet.
 - `docs/`: scope, frontend direction, contract ownership and development guide.
 - `RouteWise.sln`: the two .NET projects; the frontend uses npm separately.
 
-SQLite, EF Core, LINQ and Google Maps / Places / Routes integration belong to later
-implementation. Frontend development will initially use MSW mocks behind an HTTP
-API boundary before connecting real backend endpoints. Contracts and mocks begin
-in Phase 2.
+SQLite, EF Core, LINQ and backend Google Routes integration belong to later
+implementation. Frontend Maps/Places presentation is implemented; live Google
+verification awaits browser-key/billing activation. Frontend development uses MSW behind an HTTP API boundary before
+connecting real backend endpoints. Phase 2 contracts still await backend review.
 
 ## Team
 
@@ -54,14 +66,20 @@ dotnet build RouteWise.sln
 dotnet run --project backend/RouteWise.Api --launch-profile http
 ```
 
-Open `http://localhost:5173`. Vite forwards `/api` to `http://localhost:5000`.
+Open `http://localhost:5173` (unauthenticated visits go to Login). With MSW enabled,
+use `river` / `routewise123` for development only; full reload resets mock auth. Vite forwards `/api` to `http://localhost:5000`.
+For Plan search/maps, configure a Google browser key and Map ID as described in
+[Development](docs/DEVELOPMENT.md). Copy `.env.example` to `.env.local` to enable
+MSW for optimisation. Missing Google configuration displays an unavailable state;
+MSW does not provide fake Places results or map tiles.
 Visit `/api/health` at either origin to check the API while both servers run.
 Stop each server with Ctrl+C.
 
 Run the test shell with `dotnet test RouteWise.sln`. No tests are expected in
-Phase 0; successful execution does not represent assignment test coverage.
+the foundation phases; successful execution does not represent assignment test coverage.
 
 See [Development](docs/DEVELOPMENT.md) for configuration and validation commands,
 [Project scope](docs/PROJECT_SCOPE.md) for product boundaries,
 [Frontend architecture](docs/FRONTEND_ARCHITECTURE.md) for future organisation,
+[Design system](docs/DESIGN_SYSTEM.md) for shared visual rules,
 and [API contracts](docs/API_CONTRACTS.md) for the Phase 2 agreement process.

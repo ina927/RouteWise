@@ -1,0 +1,48 @@
+.toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(12rem, 16rem);
+  gap: var(--space-4);
+  max-width: 54rem;
+  margin-block-start: var(--space-6);
+}
+.feedback {
+  min-height: 1.5em;
+  margin-block: var(--space-3);
+  color: var(--color-success);
+  font: var(--font-body-secondary);
+}
+.feedback:empty {
+  min-height: 0;
+  margin-block: var(--space-6);
+}
+.empty {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-4);
+  padding-block: var(--space-8);
+}
+.empty h2 {
+  font: var(--font-section-heading);
+}
+.empty p {
+  color: var(--color-text-secondary);
+}
+.dialogForm {
+  display: grid;
+  gap: var(--space-4);
+  overflow-wrap: anywhere;
+}
+.error {
+  font: var(--font-body-secondary);
+  color: var(--color-error);
+  overflow-wrap: anywhere;
+}
+.cardStatus {
+  font: var(--font-body-secondary);
+  color: var(--color-text-secondary);
+}
+@media (max-width: 52rem) {
+  .toolbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

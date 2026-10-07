@@ -1,0 +1,5 @@
+.button {
+  min-inline-size: var(--control-height-default);
+  padding: var(--space-2);
+  flex: none;
+}

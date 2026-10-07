@@ -1,0 +1,71 @@
+.label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-block-size: var(--control-height-default);
+  font: var(--font-body);
+  cursor: pointer;
+}
+.input {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  clip-path: inset(50%);
+  overflow: hidden;
+}
+.track {
+  display: flex;
+  align-items: center;
+  flex: none;
+  inline-size: calc(var(--icon-size-lg) * 2 + var(--space-2));
+  padding: var(--space-1);
+  border: var(--border-width) solid var(--color-border-control);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-pressed);
+  transition: background-color var(--duration-fast) var(--ease-standard);
+}
+.thumb {
+  inline-size: var(--icon-size-lg);
+  block-size: var(--icon-size-lg);
+  border-radius: var(--radius-full);
+  background: var(--color-text-on-solid);
+  box-shadow: var(--shadow-subtle);
+  transition: transform var(--duration-fast) var(--ease-standard);
+}
+.input:checked + .track {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.input:checked + .track .thumb {
+  transform: translateX(calc(var(--icon-size-lg) - var(--border-width) * 2));
+}
+.label:hover .input:not(:disabled):checked + .track {
+  background: var(--color-primary-hover);
+}
+.input:focus-visible + .track {
+  outline: var(--focus-ring-width) solid var(--color-focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+.input:disabled + .track {
+  background: var(--color-disabled-surface);
+  border-color: var(--color-disabled-border);
+}
+.input:disabled + .track .thumb {
+  background: var(--color-disabled-text);
+}
+.label:has(.input:disabled) {
+  color: var(--color-disabled-text);
+  cursor: not-allowed;
+}
+@media (forced-colors: active) {
+  .thumb {
+    background: ButtonText;
+  }
+  .input:checked + .track {
+    border-color: Highlight;
+  }
+  .input:focus-visible + .track {
+    outline-color: Highlight;
+  }
+}

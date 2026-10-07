@@ -1,3 +1,6 @@
+@import '@fontsource-variable/inter/wght.css';
+@import './tokens.css';
+
 *,
 *::before,
 *::after {
@@ -12,6 +15,28 @@ body,
 
 body {
   margin: 0;
+  background-color: var(--color-background);
+  color: var(--color-text);
+  font: var(--font-body);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font: inherit;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  margin: 0;
 }
 
 button,
@@ -19,4 +44,23 @@ input,
 select,
 textarea {
   font: inherit;
+}
+
+a {
+  color: var(--color-primary);
+}
+
+a:hover {
+  color: var(--color-primary-hover);
+}
+
+:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+@media (forced-colors: active) {
+  :focus-visible {
+    outline-color: Highlight;
+  }
 }
