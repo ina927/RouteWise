@@ -18,13 +18,12 @@ export function ProductShell({
   return (
     <AppShell
       activeItem={activeItem}
-      disabledItems={['account']}
       pendingSharedCount={
         invitations.data?.filter((item) => item.status === 'pending').length ??
         0
       }
       onNavigate={(destination) => {
-        if (destination !== 'account') void navigate(`/${destination}`)
+        void navigate(`/${destination}`)
       }}
     >
       {children}

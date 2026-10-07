@@ -35,8 +35,12 @@ resizable desktop/PC windows; a mobile layout is not required.
 
 ## Accounts and sharing
 
-- Sign Up/Login uses a unique username. Share only saved journeys, inviting a
-  RouteWise user by username.
+- Sign Up/Login uses a unique username and password only; no email, real name,
+  profile, password recovery or editing. Usernames are 3?20 ASCII letters/digits/
+  underscores, case-insensitively unique; passwords require at least 8 characters.
+- Share only saved journeys, inviting a RouteWise user by username.
+- Account supports logout and confirmed hard deletion of the user, owned journeys
+  and associated invitations/sharing relationships. Deleted usernames are reusable.
 - Invitations are Pending, Accepted or Declined. Accepted journeys are view-only
   for the recipient and appear in Shared Trips, separate from owned Saved Journeys.
 - Friend relationships and a profile system are not required.

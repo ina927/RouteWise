@@ -63,6 +63,7 @@ function representativePlace(summary, detail) {
 try {
   resetMockStore()
   server.listen({ onUnhandledFrame: 'error' })
+  setMockViewer('user-river')
   const owned = await journeys.getOwnedJourneys()
   assert.equal(owned.length, 2)
   for (const summary of owned) {
@@ -287,7 +288,7 @@ try {
   assert.equal(await journeys.deleteJourney(duplicate.id), undefined)
   await assert.rejects(journeys.getJourney(duplicate.id), status(404))
 
-  const matches = await searchUsers('AVERY@EXAMPLE.TEST')
+  const matches = await searchUsers('AVERY')
   assert.deepEqual(matches, [{ id: 'user-avery', username: 'avery' }])
   assert.deepEqual(await searchUsers('avery'), matches)
   assert.deepEqual(await searchUsers(''), [])
@@ -389,7 +390,10 @@ try {
   await assert.rejects(journeys.getOwnedJourneys(), status(502))
   server.resetHandlers()
   resetMockStore()
+  setMockViewer('user-river')
   assert.deepEqual(await journeys.getOwnedJourneys(), owned)
+  const { smokeAuth } = await import('./smoke-auth.mjs')
+  await smokeAuth()
   console.log(
     'PASS: HTTP/API round trips, 3 end modes, max-10 boundaries, exact order, stable identities, metadata, CRUD, sharing isolation, read-only access, errors and reset.',
   )

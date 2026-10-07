@@ -150,7 +150,7 @@ Keep npm lockfile changes with dependency changes. Review `git diff` and
 are ignored by the root `.gitignore`. Shared VS Code settings/extensions may be
 tracked if the team later needs them; user-specific files should stay local.
 
-Phases 0-7 are frozen; Phase 8 remains on the existing `ina-frontend`
+Phases 0-8 are frozen; Phase 8.5 remains on the existing `ina-frontend`
 branch for manual visual QA and commit by the owner.
 
 Open `/saved` with MSW enabled to view the seeded owned journeys. Search/sort and
@@ -166,7 +166,7 @@ boundaries in [Frontend architecture](FRONTEND_ARCHITECTURE.md) and the approved
 
 ## Phase 8 sharing review
 
-With MSW enabled, open `/shared`: the default viewer has one pending invitation
+With MSW enabled, log in as `river` and open `/shared`: this viewer has one pending invitation
 (Coastal afternoon) and one accepted journey (Museum walk). Accept/Decline updates
 the list and Sidebar count without reloading. Removing an accepted journey affects
 only this recipient and clears its cached detail access. Full reload resets mocks.
@@ -179,8 +179,35 @@ Phase 8 checks are typecheck, lint, build, format:check, smoke:api and git diff
 --check, plus one focused browser pass for sharing, permissions, Saved navigation
 and widths 1024/1280/1440. No screenshots or permanent QA route are required.
 
-Sharing integration handover: the unchanged Phase 2 searchUsers boundary/mock can
-still match broader fields. The final backend user-search behaviour must narrow
-to username lookup to match the confirmed sharing UI. The UI admits only matching
-usernames for selection; it reads no private mock fields. Email remains planned
-for User/Auth account data, with that contract still to be decided.
+Sharing is username-only in both UI and MSW. The Phase 8.5 decision supersedes
+all earlier references to email: email is not part of the account product.
+
+## Authentication and Account (Phase 8.5)
+
+Enable MSW as above and open /login or /signup. Seeded usernames are river, avery,
+quinn and casey; all use the development-only password `routewise123`. These
+fictional credentials exist only for local MSW QA, not production or product UI.
+The initial viewer is logged out. Signup creates a user in the same mock store.
+Account is available through Sidebar after login and supports logout/delete.
+
+Public routes are /login and /signup; authenticated visits redirect to /plan.
+/plan, /plan/route, /saved, /shared, /account and /journeys/:journeyId require a
+session and redirect unauthenticated visitors to /login. A checking state prevents
+protected content flashes, and session-network failure offers Retry.
+
+Full browser reload resets the mock store, including login, new accounts, account
+deletions and journey edits. This is only a mock limitation. Real production
+uses a server-managed HttpOnly cookie/session, and GET /api/auth/me should survive
+refresh while that session is valid. Never put auth tokens or passwords in
+localStorage/sessionStorage. The backend must hash passwords, never store plaintext.
+
+For functional QA, log in as river to populate Saved/Shared/details, log out, then
+log in as avery or a new signup and verify only their data is visible. Account
+deletion cascades owned journeys and associated sharing, then opens /signup; the
+same username can be registered again. Login/signup goes to /plan without a
+return-URL mechanism. No email, profile or recovery flow exists.
+
+Required checks include typecheck, lint, build, format:check, smoke:api and git
+diff --check. smoke:api includes smoke-auth.mjs for session/permission checks,
+username validation, casing, password handling, deletion isolation and reuse.
+Real backend cookie/security integration remains pending handover to Nam.

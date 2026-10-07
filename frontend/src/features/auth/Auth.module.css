@@ -1,0 +1,69 @@
+.standalone {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: var(--space-6);
+}
+.panel {
+  width: min(100%, 32rem);
+  display: grid;
+  gap: var(--space-6);
+  padding: var(--space-8);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-surface);
+  background: var(--color-surface);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font: var(--font-card-title);
+}
+.brand svg {
+  color: var(--color-primary);
+  width: var(--icon-size-lg);
+  height: var(--icon-size-lg);
+}
+.heading {
+  font: var(--font-section-heading);
+  letter-spacing: var(--letter-spacing-heading);
+}
+.form {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+.error {
+  color: var(--color-error);
+  font: var(--font-body-secondary);
+}
+.secondary {
+  font: var(--font-body-secondary);
+  color: var(--color-text-secondary);
+}
+.account {
+  max-width: 40rem;
+  display: grid;
+  gap: var(--space-8);
+}
+.accountSection {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-surface);
+  background: var(--color-surface);
+  overflow-wrap: anywhere;
+}
+.accountSection h2 {
+  font: var(--font-card-title);
+}
+.accountSection dt {
+  font: var(--font-label);
+  color: var(--color-text-secondary);
+}
+.accountSection dd {
+  margin: var(--space-2) 0 0;
+}

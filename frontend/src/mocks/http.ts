@@ -18,7 +18,9 @@ export async function readJson(request: Request): Promise<unknown> {
   }
 }
 
-export async function respond(action: () => Response | Promise<Response>) {
+export async function respond(
+  action: () => Response | undefined | Promise<Response | undefined>,
+) {
   try {
     return await action()
   } catch (error) {

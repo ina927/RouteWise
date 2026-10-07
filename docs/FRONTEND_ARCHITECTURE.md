@@ -1,10 +1,10 @@
 # Frontend architecture direction
 
-## Current foundation (Phases 0-8)
+## Current foundation (Phases 0-8.5)
 
 `src/main.tsx` mounts React under StrictMode and imports `styles/global.css`.
 `app/App.tsx` composes `AppProviders` with the central router. `AppProviders.tsx`
-owns one stable TanStack Query client; `router.tsx` owns route definitions outside
+owns the root authentication Query client; `router.tsx` owns route definitions outside
 React renders. Root redirects to `/plan`; unknown routes retain the neutral
 bootstrap fallback. `/plan` and `/plan/route` share PlanningLayout.
 
@@ -63,7 +63,7 @@ immediate in-flight guard, disabled controls, abort on unmount, and inline error
 Success stores the submitted configuration/result and navigates to `/plan/route`.
 RouteBoundary renders OptimisedRoutePage; direct access without
 an in-memory result redirects to `/plan`. The Plan sidebar intent returns to the
-preserved draft. Saved and Shared are enabled; Account remains disabled.
+preserved draft. Plan, Saved, Shared and Account are enabled after authentication.
 
 `googleMaps.ts` isolates SDK loading, narrow private vendor type descriptions,
 autocomplete session tokens, requested place fields, and map/marker instances.
@@ -209,8 +209,8 @@ The summary is re-fetched rather than inventing a client photo-selection policy.
 ## Shared Trips and Journey Sharing (Phase 8)
 
 `app/ProductShell` connects navigation and the shared incoming-invitation query to
-presentational AppShell/Sidebar. Plan, Saved and Shared are enabled; only Account
-is disabled. The red notification count is derived from incoming invitations
+presentational AppShell/Sidebar. Plan, Saved, Shared and Account are enabled
+inside authenticated routes. The red notification count is derived from incoming invitations
 whose status is pending, hidden at zero and shared across page observers.
 
 `features/sharing` owns `/shared`, compact pending rows, accepted cards, removal
@@ -248,6 +248,38 @@ Longer content can grow without clipping. Photo treatment is retained.
 PlacePhoto and read-only Journey Details are reused. No contract, dependency,
 mock permission, backend, authentication or social feature was added. Live Google
 photo verification remains pending; Phase 9 has not begun.
+
+## Authentication and Account (Phase 8.5)
+
+`features/auth` owns Login/Signup, Account, session context/query and guards.
+The root QueryClient owns only `['current-user']`, from GET /auth/me. 401 means
+unauthenticated; other errors show a retry screen. Public-only and protected
+pathless router boundaries prevent content flashes and redirect loops. Login and
+signup always enter /plan; no return-URL scheme was added. A one-use sign-out
+destination lets the guard send deletion to /signup and logout to /login; the
+public boundary resets it so later unauthenticated protected visits use /login.
+
+Each authenticated mount gets a separate ProductSession QueryClient keyed by user
+ID. Logout/deletion unmounts it, cancels reads and clears queries/mutations; the
+next login receives a fresh client even for the same user. Late feature callbacks
+can only reach the discarded client, never the next user's cache. Existing
+journey/invitation keys and feature invalidation stay unchanged. Product 401
+errors request a session refresh. Auth state never lives in PlanningLayout;
+its draft is naturally destroyed when protected content unmounts.
+
+Auth submissions use authApi, with local guarded pending/error state. Passwords
+remain native input/request-scope values, are cleared after API attempts, and
+never enter query/mutation variables, public objects or browser storage. Confirm
+password is validated locally only. Login/signup validation and safe errors are
+feature-owned; mock credentials are separate from public users. Signup and login
+use case-insensitive usernames, preserving display casing. Account deletion is a
+hard cascade implemented only in MSW now. See API_CONTRACTS for backend handover.
+
+Login/Signup use compact standalone forms; Account uses ProductShell with username,
+logout and a separate confirmed deletion action. No email, profile, editing,
+recovery, dependency, backend code or global design refinement was introduced.
+MSW resets authentication on reload; real cookie/session restoration is pending
+backend implementation. Phases 9/global visual refinement have not begun.
 
 ## Future responsibilities
 
@@ -313,5 +345,6 @@ Comments should explain non-obvious intent, not restate code.
 
 0: bootstrap/tooling; 1: design system; 2: contracts/API boundary/MSW;
 3: shared UI primitives and application shell; 4: Plan a Journey (complete); 5: Optimised Route (complete; live Google verification pending);
-6: Save Journey and Journey Details (complete; live Google verification pending); 7: Saved Journeys (complete); 8: Shared Trips and Journey Sharing (implemented; manual visual QA pending); 9: refactor,
+6: Save Journey and Journey Details (complete; live Google verification pending); 7: Saved Journeys (complete); 8: Shared Trips and Journey Sharing (complete); 8.5: Authentication and Account
+(implemented; manual visual QA pending); 9: refactor,
 QA and integration readiness. Later phases extend these boundaries as needed.

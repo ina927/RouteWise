@@ -5,10 +5,10 @@ import { fixtureRoute } from '../routeFixtures.ts'
 
 // These are fictional users and synthetic place IDs, not Google credentials/data.
 export const mockUsers = [
-  { id: 'user-river', username: 'river', email: 'river@example.test' },
-  { id: 'user-avery', username: 'avery', email: 'avery@example.test' },
-  { id: 'user-quinn', username: 'quinn', email: 'quinn@example.test' },
-  { id: 'user-casey', username: 'casey', email: 'casey@example.test' },
+  { id: 'user-river', username: 'river' },
+  { id: 'user-avery', username: 'avery' },
+  { id: 'user-quinn', username: 'quinn' },
+  { id: 'user-casey', username: 'casey' },
 ]
 
 export const mockPlaces = {

@@ -2,6 +2,7 @@ import type { Journey, JourneySummary } from '../contracts/journeys.ts'
 import type { Invitation } from '../contracts/sharing.ts'
 import type { UserSummary } from '../contracts/users.ts'
 import { createSeed, mockUsers, type MockInvitation } from './data/seed.ts'
+import { usernameError, passwordError } from '../utils/authValidation.ts'
 import { MockError } from './http.ts'
 import {
   object,
@@ -13,25 +14,30 @@ import {
 } from './validation.ts'
 
 let state = createSeed()
-let viewerId = 'user-river'
+let users: UserSummary[] = structuredClone(mockUsers)
+// MOCK-ONLY development credentials. Never included in public API objects.
+let credentials = new Map(mockUsers.map((item) => [item.id, 'routewise123']))
+let viewerId: string | null = null
 let sequence = 0
 const removedShares = new Set<string>()
 
-// Dev tools / smoke checks only. There is no session or authentication contract.
+// Dev tools / smoke checks only. Full reload deliberately resets the mock session.
 export function resetMockStore() {
   state = createSeed()
-  viewerId = 'user-river'
+  users = structuredClone(mockUsers)
+  credentials = new Map(mockUsers.map((item) => [item.id, 'routewise123']))
+  viewerId = null
   sequence = 0
   removedShares.clear()
 }
 
-export function setMockViewer(id: string) {
-  user(id)
+export function setMockViewer(id: string | null) {
+  if (id !== null) user(id)
   viewerId = id
 }
 
 function user(id: string): UserSummary {
-  const found = mockUsers.find((item) => item.id === id)
+  const found = users.find((item) => item.id === id)
   if (!found) throw new MockError(404, 'User not found.')
   return { id: found.id, username: found.username }
 }
@@ -121,7 +127,7 @@ export function createMockJourney(value: unknown) {
   const date = body.date === undefined ? undefined : parseDate(body.date)
   const journey: Omit<Journey, 'access'> = {
     id: `journey-created-${++sequence}`,
-    owner: user(viewerId),
+    owner: user(requireMockViewer()),
     name,
     plan,
     annotations,
@@ -178,12 +184,10 @@ export function deleteMockJourney(id: string) {
 export function searchMockUsers(query: string) {
   const term = query.trim().toLowerCase()
   if (!term) return []
-  return mockUsers
+  return users
     .filter(
       (item) =>
-        item.id !== viewerId &&
-        (item.username.toLowerCase().includes(term) ||
-          item.email.toLowerCase().includes(term)),
+        item.id !== viewerId && item.username.toLowerCase().includes(term),
     )
     .map((item) => user(item.id))
 }
@@ -220,7 +224,7 @@ export function sendMockInvitation(journeyId: string, recipientId: string) {
   const item: MockInvitation = {
     id: `invite-created-${++sequence}`,
     journeyId,
-    senderId: viewerId,
+    senderId: requireMockViewer(),
     recipientId,
     status: 'pending',
   }
@@ -258,4 +262,73 @@ export function removeMockSharedJourney(journeyId: string) {
     throw new MockError(404, 'Accepted shared journey not found.')
   // Retain invitation history, but remove this viewer's listing and read access.
   relationships.forEach((item) => removedShares.add(item.id))
+}
+
+export function requireMockViewer(): string {
+  if (!viewerId) throw new MockError(401, 'Authentication required.')
+  return viewerId
+}
+
+export function currentMockUser(): UserSummary {
+  return user(requireMockViewer())
+}
+
+export function signupMockUser(value: unknown) {
+  const body = object(value)
+  const username = typeof body.username === 'string' ? body.username.trim() : ''
+  const password = typeof body.password === 'string' ? body.password : ''
+  requireValid(!usernameError(username), usernameError(username) ?? '')
+  requireValid(!passwordError(password), passwordError(password) ?? '')
+  if (
+    users.some((item) => item.username.toLowerCase() === username.toLowerCase())
+  )
+    throw new MockError(409, 'This username is already taken.')
+  const created = { id: 'user-created-' + ++sequence, username }
+  users.push(created)
+  credentials.set(created.id, password)
+  viewerId = created.id
+  return user(created.id)
+}
+
+export function loginMockUser(value: unknown) {
+  const body = object(value)
+  const username =
+    typeof body.username === 'string' ? body.username.trim().toLowerCase() : ''
+  const found = users.find((item) => item.username.toLowerCase() === username)
+  if (
+    !found ||
+    typeof body.password !== 'string' ||
+    credentials.get(found.id) !== body.password
+  )
+    throw new MockError(401, 'Invalid username or password.')
+  viewerId = found.id
+  return user(found.id)
+}
+
+export function logoutMockUser() {
+  viewerId = null
+}
+
+export function deleteMockAccount() {
+  const id = requireMockViewer()
+  const owned = new Set(
+    state.journeys
+      .filter((item) => item.owner.id === id)
+      .map((item) => item.id),
+  )
+  state.journeys = state.journeys.filter((item) => !owned.has(item.id))
+  state.invitations = state.invitations.filter((item) => {
+    if (
+      owned.has(item.journeyId) ||
+      item.senderId === id ||
+      item.recipientId === id
+    ) {
+      removedShares.delete(item.id)
+      return false
+    }
+    return true
+  })
+  users = users.filter((item) => item.id !== id)
+  credentials.delete(id)
+  viewerId = null
 }

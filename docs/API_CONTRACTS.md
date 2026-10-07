@@ -70,7 +70,7 @@ All paths include the default API base; listed responses are successful ones.
 | PATCH `/api/journeys/:id` | `updateJourney` | UpdateJourneyRequest | 200 Journey; owner only |
 | POST `/api/journeys/:id/duplicate` | `duplicateJourney` | none | 201 Journey; owner only |
 | DELETE `/api/journeys/:id` | `deleteJourney` | none | 204; owner only |
-| GET `/api/users?query=...` | `searchUsers` | username/email query | 200 UserSummary[] |
+| GET `/api/users?query=...` | `searchUsers` | username query | 200 UserSummary[] |
 | GET `/api/journeys/:id/invitations` | `getJourneyInvitations` | none | 200 Invitation[]; owner only |
 | POST `/api/journeys/:id/invitations` | `sendInvitation` | `{ recipientId }` | 201 Invitation; owner only |
 | GET `/api/invitations` | `getIncomingInvitations` | none | 200 Invitation[]; recipient, all states |
@@ -218,10 +218,10 @@ does not prescribe whether the backend stores, derives or otherwise produces it.
 
 ## NAM REVIEW: users and sharing
 
-`UserSummary = { id, username }`. Search accepts username/email without returning
-email, passwords, tokens, profiles or avatars. Fictional `.test` emails exist only
-in private mock matching data. Unique usernames are account-creation context;
-no signup/login/password/session contracts are defined.
+`UserSummary = { id, username }`. Sharing searches usernames only, case-insensitively,
+with self excluded. Email is not part of the product or mock user store. Passwords,
+tokens, profiles and avatar fields are never returned. Phase 8.5 adds the session
+boundary below without changing public UserSummary.
 
 `Invitation = { id, journey: JourneySummary, sender: UserSummary,
 recipient: UserSummary, status: InvitationStatus }`. Sender/owner identify who
@@ -248,20 +248,22 @@ success JSON remains an error. No-content operations return undefined.
 
 - 400: invalid JSON/shape; missing fixed end/name; more than 10 occurrences;
   invalid occurrence IDs, coordinates, metadata or inconsistent route segments.
+- 401: unauthenticated product access/current-user lookup or generic invalid login.
 - 403: missing shared access or attempts at owner-only operations.
 - 404: unknown journey/user/invitation or missing accepted shared relationship.
-- 409: mock-only repeated invitation or response to an already answered invitation.
+- 409: duplicate username (case-insensitive), or mock-only repeated invitation or response to an already answered invitation.
 - 501: mock-only missing API handler/method.
 
 Mock validation covers confirmed rules and transport consistency, not speculative
-business policies. Unrecognised input fields are ignored, not persisted. Future
-authentication errors remain undecided.
+business policies. Unrecognised input fields are ignored, not persisted. Auth
+pages map failures to safe messages instead of displaying backend exception details.
 
 ## Mock-only choices and unresolved decisions
 
 State is in-memory under `src/mocks`, per tab, reset by full refresh; no localStorage.
-The initial fictional viewer is `user-river`. `setMockViewer`/`resetMockStore` are
-development helpers, not account APIs. Four journeys/six invitations cover owned,
+The initial viewer is unauthenticated. Login/signup select the same effective
+viewer used for all product permissions. `setMockViewer`/`resetMockStore` remain
+development helpers, not product APIs. Four journeys/six invitations cover owned,
 incoming, outgoing, accepted, declined and multi-recipient cases.
 
 The following are **MOCK-ONLY**, not confirmed product behaviour:
@@ -285,7 +287,8 @@ The following are **MOCK-ONLY**, not confirmed product behaviour:
 - Removed-point annotation pruning and invitation cleanup on deletion are
   proposed/mock consistency behaviour, not a backend storage design.
 
-Still unresolved: auth/credentials/CORS, duplicate naming, reinvite/retry policy,
+Still unresolved: cross-origin deployment/CORS and backend session hardening,
+duplicate naming, reinvite/retry policy,
 broader repeat-place policy, final geometry/route provenance verification,
 concurrent-edit handling, removal/history semantics, database design, production
 caching/deployment routing. No timestamps, pagination, photo URLs or social
@@ -307,3 +310,44 @@ workers. No product code needs to know whether requests are mocked.
 same API functions/handlers. It then stops MSW and calls a real local HTTP stub
 through the unchanged API module. No framework was added. This verifies transport
 and state, not browser service-worker registration, UI or ASP.NET product APIs.
+
+## NAM HANDOVER: Authentication and Account (Phase 8.5)
+
+Frontend/MSW contract, pending real ASP.NET implementation. The account model is
+username + password only. There is no email, full name, profile, username/password
+editing or recovery. CurrentUser aliases UserSummary but means authenticated
+session identity. Production must use a server-managed HttpOnly cookie/session;
+no JWT, bearer header, token decoding or browser token storage is used.
+
+| Method/path | Request | Success |
+| --- | --- | --- |
+| POST /api/auth/signup | { username, password } | 201 CurrentUser |
+| POST /api/auth/login | { username, password } | 200 CurrentUser |
+| POST /api/auth/logout | none | 204 |
+| GET /api/auth/me | none | 200 CurrentUser; 401 when unauthenticated |
+| DELETE /api/account | none | 204 |
+
+CurrentUser is exactly { id, username }. Confirm password is frontend-only.
+Username is trimmed, 3?20 ASCII letters/digits/underscores, case-insensitively
+unique, with entered casing preserved for display. Login uses the same casing
+policy; passwords are case-sensitive, never trimmed, and require at least 8
+characters at signup without complexity rules. Signup validation uses 400;
+duplicate username uses 409. Invalid login always uses 401 with the generic
+"Invalid username or password." response. Logout is idempotent in MSW.
+
+Hard deletion removes owned journeys, invitations on those journeys, invitations
+where the user is sender/recipient, all associated shared relationships, the
+credential and user record. Other owners' journeys/other recipients survive.
+The username can be registered again with a new ID and no old access/history.
+
+The fetch boundary explicitly uses same-origin cookie credentials, sufficient
+for the current /api proxy. Cross-origin credentialed deployment requires a
+separate coordinated credentials/CORS decision; it is not silently enabled.
+Backend must implement session establishment/invalidation, HttpOnly cookie
+configuration, request protection and API permission enforcement. Passwords must
+be stored only as hashes, never plaintext; the backend team chooses the hashing
+implementation. No cookie middleware, hashing, persistence or C# code is added.
+
+MSW alone uses separate in-memory development credentials and viewer state, not
+real HttpOnly cookies. It resets to unauthenticated on full reload, while real
+/auth/me should restore a still-valid server session. No fake persistence is added.

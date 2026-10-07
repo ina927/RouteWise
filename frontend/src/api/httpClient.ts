@@ -30,6 +30,7 @@ export async function request(
   options: RequestOptions = {},
 ): Promise<unknown> {
   const response = await fetch(apiUrl(path), {
+    credentials: 'same-origin',
     method: options.method ?? 'GET',
     signal: options.signal,
     headers: {

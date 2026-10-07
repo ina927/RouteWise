@@ -4,7 +4,7 @@ RouteWise is a desktop-first, single-day travel itinerary optimiser. Travellers
 choose places they already want to visit; the C# backend will recommend an efficient
 visiting order using Simulated Annealing.
 
-**Current phase: Phase 8, Shared Trips and Journey Sharing.** `/` redirects to `/plan` for place
+**Current phase: Phase 8.5, Authentication and Account.** `/` redirects to `/plan` for place
 selection and optimisation submission. `/plan/route` displays route order,
 totals/segments, automatic re-optimisation on setting changes, intermediate-only
 reordering via exact-order calculation, and local Reset to the latest successful
@@ -15,7 +15,9 @@ memory, with owner metadata/annotation editing and shared read-only presentation
 delete. Edit route reuses Plan/Optimised Route and saves the changed plan back to
 the same Journey. `/shared` manages incoming invitations and accepted read-only
 journeys. Owners can search users and invite them from Journey Details. Removing
-a shared journey removes only the recipient relationship. Account remains disabled.
+a shared journey removes only the recipient relationship. `/login` and `/signup`
+are public; product routes require a username/password session. `/account` displays
+the username and provides logout and confirmed account deletion. Email is excluded.
 The C# API still exposes only `GET /api/health`; product endpoints use MSW locally.
 
 ## Stack and structure
@@ -64,7 +66,8 @@ dotnet build RouteWise.sln
 dotnet run --project backend/RouteWise.Api --launch-profile http
 ```
 
-Open `http://localhost:5173`. Vite forwards `/api` to `http://localhost:5000`.
+Open `http://localhost:5173` (unauthenticated visits go to Login). With MSW enabled,
+use `river` / `routewise123` for development only; full reload resets mock auth. Vite forwards `/api` to `http://localhost:5000`.
 For Plan search/maps, configure a Google browser key and Map ID as described in
 [Development](docs/DEVELOPMENT.md). Copy `.env.example` to `.env.local` to enable
 MSW for optimisation. Missing Google configuration displays an unavailable state;
