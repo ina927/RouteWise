@@ -81,7 +81,7 @@ export function OptimisedRoutePage({ result }: { result: PlanningResult }) {
         />
         <div className={styles.objective}>
           <SegmentedControl
-            label="Optimize for"
+            label="Optimise for"
             value={updates.settings.objective}
             disabled={updates.pending === 'calculate' || saveChanges.pending}
             options={[

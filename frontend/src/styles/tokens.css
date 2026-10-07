@@ -24,16 +24,16 @@
   --color-selected-border: var(--color-primary);
 
   /* Notification badges are independent of route and danger semantics. */
-  --color-notification: #d83a52;
+  --color-notification: #c34b3d;
 
   /* Route identity is independent of error/destructive feedback. */
-  --color-route: #d83a52;
-  --color-route-surface: #fff1f3;
-  --color-route-text: #a82c40;
-  --color-danger: #b42318;
-  --color-danger-hover: #912018;
-  --color-danger-active: #7a271a;
-  --color-danger-surface: #fef3f2;
+  --color-route: #dc6352;
+  --color-route-surface: #fff2ee;
+  --color-route-text: #9f4035;
+  --color-danger: #b7473b;
+  --color-danger-hover: #a53d33;
+  --color-danger-active: #90332b;
+  --color-danger-surface: #fff2ee;
   --color-error: var(--color-danger);
   --color-error-surface: var(--color-danger-surface);
   --color-success: #147d46;
@@ -51,7 +51,7 @@
   --font-size-md: 1rem;
   --font-size-lg: 1.25rem;
   --font-size-xl: 1.5rem;
-  --font-size-2xl: 2.25rem;
+  --font-size-2xl: 2rem;
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
@@ -63,7 +63,7 @@
 
   --font-page-title: var(--font-weight-bold) var(--font-size-2xl) /
     var(--line-height-tight) var(--font-family-sans);
-  --font-section-heading: var(--font-weight-semibold) var(--font-size-xl) /
+  --font-section-heading: var(--font-weight-semibold) var(--font-size-lg) /
     var(--line-height-heading) var(--font-family-sans);
   --font-card-title: var(--font-weight-semibold) var(--font-size-lg) /
     var(--line-height-heading) var(--font-family-sans);
@@ -75,7 +75,7 @@
     var(--line-height-body) var(--font-family-sans);
   --font-caption: var(--font-weight-medium) var(--font-size-xs) /
     var(--line-height-body) var(--font-family-sans);
-  --font-control: var(--font-weight-semibold) var(--font-size-md) /
+  --font-control: var(--font-weight-semibold) var(--font-size-sm) /
     var(--line-height-body) var(--font-family-sans);
 
   /* Spacing is based on 4px at the default root size. */
@@ -99,7 +99,7 @@
   --shadow-overlay: 0 16px 48px rgb(16 23 43 / 18%);
 
   --control-height-compact: 2.25rem;
-  --control-height-default: 2.75rem;
+  --control-height-default: 2.5rem;
   --control-height-large: 3rem;
   --control-padding-inline: var(--space-4);
   --control-content-gap: var(--space-2);
@@ -110,9 +110,9 @@
   --focus-ring-width: 3px;
   --focus-ring-offset: 3px;
 
-  --layout-sidebar-width: 7rem;
-  --layout-page-gutter: clamp(var(--space-6), 3vw, var(--space-12));
-  --layout-section-gap: var(--space-8);
+  --layout-sidebar-width: 6.5rem;
+  --layout-page-gutter: clamp(var(--space-6), 2.5vw, var(--space-8));
+  --layout-section-gap: var(--space-6);
 
   --duration-fast: 120ms;
   --duration-normal: 180ms;

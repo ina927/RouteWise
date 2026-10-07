@@ -8,13 +8,13 @@
   gap: var(--space-6);
 }
 .controls > * {
-  flex: 0 1 22rem;
+  flex: 0 1 19rem;
   min-inline-size: 0;
 }
 .objective {
   border-inline-start: var(--border-width) solid var(--color-border);
   padding-inline-start: var(--space-6);
-  flex-basis: 25rem;
+  flex-basis: 22rem;
 }
 .update {
   min-block-size: var(--space-6);
@@ -28,7 +28,7 @@
 }
 .workspace {
   display: grid;
-  grid-template-columns: minmax(22rem, 2fr) minmax(0, 3fr);
+  grid-template-columns: minmax(22rem, 0.85fr) minmax(0, 1.4fr);
   align-items: start;
   gap: var(--space-4);
 }
@@ -44,7 +44,7 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-3);
-  margin-block-end: var(--space-4);
+  margin-block: 0 var(--space-4);
 }
 .summary > div {
   display: flex;
@@ -84,9 +84,9 @@
 .save {
   inline-size: 100%;
   margin-block-start: var(--space-3);
-  min-block-size: var(--control-height-large);
+  min-block-size: var(--control-height-default);
 }
-@media (max-width: 70rem) {
+@media (max-width: 60rem) {
   .workspace {
     grid-template-columns: minmax(0, 1fr);
   }

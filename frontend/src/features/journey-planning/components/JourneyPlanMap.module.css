@@ -2,7 +2,7 @@
   position: sticky;
   inset-block-start: var(--space-4);
   min-inline-size: 0;
-  min-block-size: 36rem;
+  min-block-size: 26rem;
   block-size: calc(100dvh - 13rem);
   max-block-size: 60rem;
   border: var(--border-width) solid var(--color-border);
@@ -39,7 +39,7 @@
   font: var(--font-body-secondary);
   max-inline-size: 24rem;
 }
-@media (max-width: 70rem) {
+@media (max-width: 60rem) {
   .panel {
     position: relative;
     inset-block-start: auto;

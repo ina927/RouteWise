@@ -3,7 +3,7 @@
   max-inline-size: none;
   max-block-size: calc(100dvh - var(--space-8));
   margin: auto;
-  padding: var(--space-8);
+  padding: var(--space-6);
   overflow: auto;
   border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius-surface);
@@ -34,7 +34,7 @@
 .content {
   display: grid;
   gap: var(--space-4);
-  margin-block-start: var(--space-6);
+  margin-block-start: var(--space-4);
   min-inline-size: 0;
 }
 .footer {
@@ -42,5 +42,5 @@
   justify-content: flex-end;
   flex-wrap: wrap;
   gap: var(--space-3);
-  margin-block-start: var(--space-8);
+  margin-block-start: var(--space-6);
 }

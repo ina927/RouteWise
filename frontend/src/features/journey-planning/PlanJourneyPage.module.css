@@ -6,29 +6,37 @@
   margin-block-end: var(--space-4);
 }
 .controls > * {
-  flex: 0 1 22rem;
+  flex: 0 1 19rem;
   min-inline-size: 0;
 }
 .objective {
   border-inline-start: var(--border-width) solid var(--color-border);
   padding-inline-start: var(--space-6);
-  flex-basis: 25rem;
+  flex-basis: 22rem;
 }
 .workspace {
   display: grid;
-  grid-template-columns: minmax(22rem, 2fr) minmax(0, 3fr);
+  grid-template-columns: minmax(22rem, 0.85fr) minmax(0, 1.4fr);
   gap: var(--space-4);
   align-items: start;
 }
 .builder {
   display: grid;
+  margin: 0;
   gap: var(--space-6);
-  padding: var(--space-6);
+  padding: var(--space-4);
   background: var(--color-surface);
   border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius-surface);
   box-shadow: var(--shadow-subtle);
   min-inline-size: 0;
+}
+.builder:disabled {
+  background: var(--color-surface-muted);
+}
+.builder:disabled > section,
+.builder:disabled > fieldset {
+  opacity: 0.65;
 }
 .label {
   font: var(--font-label);
@@ -62,7 +70,7 @@
 .places {
   display: grid;
   gap: var(--space-3);
-  margin-block: var(--space-4) var(--space-3);
+  margin-block: var(--space-3) var(--space-3);
 }
 .placeRow {
   display: grid;
@@ -78,11 +86,11 @@
   block-size: var(--icon-size-sm);
   border: var(--border-width-emphasis) solid var(--color-primary);
   border-radius: var(--radius-full);
-  margin-block-start: var(--space-4);
+  margin-block-start: var(--space-3);
 }
 .submit {
   inline-size: 100%;
-  min-block-size: var(--control-height-large);
+  min-block-size: var(--control-height-default);
 }
 .error {
   color: var(--color-error);
@@ -93,7 +101,7 @@
   color: var(--color-text-secondary);
   font: var(--font-body-secondary);
 }
-@media (max-width: 70rem) {
+@media (max-width: 60rem) {
   .workspace {
     grid-template-columns: minmax(0, 1fr);
   }

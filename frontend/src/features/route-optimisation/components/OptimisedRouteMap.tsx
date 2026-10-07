@@ -53,7 +53,10 @@ export function OptimisedRouteMap({
     if (map && !unavailable) map.update(route)
   }, [map, unavailable, route])
   useEffect(() => {
-    if (map && !unavailable) map.highlight(hoveredSegmentId, selectedSegmentId)
+    map?.highlight(
+      unavailable ? null : hoveredSegmentId,
+      unavailable ? null : selectedSegmentId,
+    )
   }, [map, unavailable, route, hoveredSegmentId, selectedSegmentId])
   return (
     <section className={styles.panel} aria-label="Route map">

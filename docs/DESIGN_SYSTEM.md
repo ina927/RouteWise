@@ -37,12 +37,12 @@ Names in this table omit the `--color-` prefix.
 | `background`, `surface`, `surface-muted` | `#F8FAFC`, `#FFFFFF`, `#F1F5F9` | Canvas, panels, supporting areas |
 | `surface-hover`, `surface-pressed` | `#F1F5F9`, `#E2E8F0` | Neutral interactive surfaces |
 | `text`, `text-secondary`, `text-muted` | `#10172B`, `#536078`, `#667085` | Main text, supporting copy, captions/placeholders |
-| `text-on-solid` | `#FFFFFF` | Text on primary/danger/route/notification solid backgrounds |
+| `text-on-solid` | `#FFFFFF` | Text on primary/danger/notification solid backgrounds |
 | `primary`, `primary-hover`, `primary-active` | `#0062F5`, `#0053D6`, `#0044B3` | Actions, links, blue stop identity; hover/pressed variants |
 | `selected-surface`, `selected-text`, `selected-border` | `#EAF2FF`, primary-active, primary | Persistent selection and active navigation |
-| `notification` | `#D83A52` | Red pending-count notification badges from the approved Shared Trips design |
-| `route`, `route-surface`, `route-text` | `#D83A52`, `#FFF1F3`, `#A82C40` | Route/endpoints, light route tint, text on that tint |
-| `danger`, `danger-hover`, `danger-active`, `danger-surface` | `#B42318`, `#912018`, `#7A271A`, `#FEF3F2` | Destructive actions and feedback |
+| `notification` | `#C34B3D` | Coral pending-count notification badges from the approved Shared Trips design |
+| `route`, `route-surface`, `route-text` | `#DC6352`, `#FFF2EE`, `#9F4035` | Route/endpoints, light route tint, text on that tint |
+| `danger`, `danger-hover`, `danger-active`, `danger-surface` | `#B7473B`, `#A53D33`, `#90332B`, `#FFF2EE` | Destructive actions and feedback |
 | `error`, `error-surface` | danger, danger-surface | Validation feedback; independently named intent |
 | `success`, `success-surface` | `#147D46`, `#EAF7EF` | Positive confirmation/status |
 | `border`, `border-control`, `border-control-hover` | `#DCE2EC`, `#7C879B`, text-secondary | Structural edges, identifiable inputs, control hover |
@@ -56,7 +56,7 @@ deletion or an error.** Keep route and danger semantics separate. Use route-text
 on route-surface, not route itself.
 
 Notification, route and danger are independent semantic roles. Notification
-currently shares route coral's visual hue, but has its own literal colour token;
+uses a deeper coral for readable white counts, with its own literal colour token;
 pending invitations are neither destructive actions nor validation errors.
 
 Muted text and control boundaries are stronger than the faintest mockup values
@@ -65,9 +65,9 @@ boundary is needed to identify a control. A pale structural border must not be
 the sole indicator of an input, toggle or selection.
 
 Reference contrast checks (sRGB, rounded): white on primary **5.17:1**, white on
-route **4.52:1**, muted text on background **4.75:1**, control border on muted
+route **3.53:1** (graphic details only), muted text on background **4.75:1**, control border on muted
 surface **3.31:1**, success on success-surface **4.70:1**, danger on danger-surface
-**6.05:1**. These cover the listed pairings, not whole-app accessibility. Future
+**4.82:1**. These cover the listed pairings, not whole-app accessibility. Future
 components must check actual adjacent colours. On map imagery, use contrasting
 marker/route halos and explicit identity labels; white-background checks do not
 establish map contrast.
@@ -81,20 +81,20 @@ There are no runtime font CDN requests. Fallbacks are `'Segoe UI', Arial,
 sans-serif`, including for characters outside Inter's coverage. A separate
 italic font is not loaded because no visual role requires it yet.
 
-The primitive size scale is **12/14/16/20/24/36px**, expressed in rem; weights
+The primitive size scale is **12/14/16/20/24/32px**, expressed in rem; weights
 are **400/500/600/700**, line heights **1.2/1.3/1.5**. Pixel equivalents assume
 the browser's default 16px root size. The root font size is not fixed.
 
 | Semantic token | Size / line height | Weight | Colour / use |
 | --- | --- | --- | --- |
-| `--font-page-title` | 36px / 1.2 | 700 | text; every page title, including journey names |
-| `--font-section-heading` | 24px / 1.3 | 600 | text; sections and future dialog titles |
+| `--font-page-title` | 32px / 1.2 | 700 | text; every page title, including journey names |
+| `--font-section-heading` | 20px / 1.3 | 600 | text; sections and future dialog titles |
 | `--font-card-title` | 20px / 1.3 | 600 | text; card/list item headings |
 | `--font-body` | 16px / 1.5 | 400 | text; paragraphs and entered field values |
 | `--font-body-secondary` | 14px / 1.5 | 400 | text-secondary; supporting descriptions |
 | `--font-label` | 14px / 1.5 | 600 | text; field labels |
 | `--font-caption` | 12px / 1.5 | 500 | text-muted; compact metadata/captions |
-| `--font-control` | 16px / 1.5 | 600 | action/selection colour; button/control labels |
+| `--font-control` | 14px / 1.5 | 600 | action/selection colour; button/control labels |
 
 Use `font: var(--font-page-title)` or the appropriate role. Font shorthands do
 not set colour or tracking. Page/section headings additionally use
@@ -108,19 +108,19 @@ is needed later, apply `tabular-nums` locally.
 
 `--space-0/1/2/3/4/6/8/12/16` map to **0/4/8/12/16/24/32/48/64px** (rem-based).
 Use 4-8 for close relationships, 8 between label and control, 16 between fields,
-24 for panel/card padding, 32 between sections and 48-64 for large gaps.
+16 for working panels/cards, 24 for dialogs and major sections; library grids retain 40px gaps.
 Choose from this scale rather than remeasuring each image.
 
 | Token | Value | Convention |
 | --- | --- | --- |
 | `--control-height-compact` | 36px | Deliberately compact secondary contexts |
-| `--control-height-default` | 44px | Default input/button/select/segmented-control target |
+| `--control-height-default` | 40px | Default input/button/select/segmented-control target |
 | `--control-height-large` | 48px | Prominent actions, used consistently |
 | `--control-padding-inline` | 16px | Horizontal control inset |
 | `--control-content-gap` | 8px | Icon-to-label gap |
-| `--layout-sidebar-width` | 112px | Future desktop icon-and-label rail |
-| `--layout-page-gutter` | `clamp(24px, 3vw, 48px)` | Shared fluid page inset using spacing tokens |
-| `--layout-section-gap` | 32px | Major content sections |
+| `--layout-sidebar-width` | 104px | Desktop icon-and-label rail |
+| `--layout-page-gutter` | `clamp(24px, 2.5vw, 32px)` | Shared fluid page inset using spacing tokens |
+| `--layout-section-gap` | 24px | Major content sections |
 
 Heights are **minimum block sizes**, not text-clipping fixed heights. Allow label
 wrapping and text zoom. IconButton hit areas use a control size, not glyph size.
@@ -215,7 +215,7 @@ AppShell uses the sidebar-width and fluid page-gutter tokens with a shrinkable
 main column. Header actions wrap. Sidebar uses outlined Lucide icons throughout,
 including MapPinned with the RouteWise wordmark instead of inventing a custom
 logo asset. Active navigation adds an edge indicator as well as selection colour.
-Pending-count notification badges use the red `--color-notification` token from
+Pending-count notification badges use the coral `--color-notification` token from
 the approved Shared Trips design, with `--color-text-on-solid` text. Route and
 danger tokens retain their separate meanings. Counts above 99 display `99+`
 while the accessible name contains the full externally supplied count.
@@ -226,3 +226,15 @@ scale; it contracts to the viewport and scrolls for long content. All modals
 include a labelled close button, including compositions based on the Save
 reference. Select retains the native operating-system option popup. These are
 intentional accessibility/consistency choices, not screenshot-specific styling.
+
+## Global visual refinement
+
+Planning and route workspaces retain a side-by-side map at laptop widths (1024px and above), stacking below 960px. Maps retain a usable 416px minimum desktop height rather than forcing every itinerary into one viewport. Saved and Shared reuse the same card/grid: maximum 396px, 40px gaps, at most three columns, with no sparse-row stretching or reserved empty owner row. Dialogs retain a shared 544px maximum width with 24px padding. Approved auth panels preserve their 512px width, 44px controls and 24px headings.
+
+The Google adapter requests English with loader `language=en` and autocomplete `language: "en"`. No country restriction or location bias is added; worldwide search remains available. Google may retain local names where translations are unavailable. See [Maps localization](https://developers.google.com/maps/documentation/javascript/localization) and [AutocompleteRequest](https://developers.google.com/maps/documentation/javascript/reference/autocomplete-data#AutocompleteRequest).
+
+## Visual review follow-up
+
+User-facing copy uses Australian English (including "Optimise for") and sentences instead of em dashes. API identifiers and paths remain unchanged. Plan requires travel mode and optimisation objective before the places fieldset is enabled; existing draft values are preserved. Builder sections use 24px gaps.
+
+Route coral is brighter than notification/destructive tones; white on notification is 4.78:1. Use the darker route-text role for text on route-surface. Selected map segments move their dash offset at 16px/second, without changing geometry, costs or viewport. Animation stops on deselection, route replacement, disposal and hidden tabs; reduced-motion preference keeps static dashes. [Google symbol animation guidance](https://developers.google.com/maps/documentation/javascript/examples/overlay-symbol-animate).

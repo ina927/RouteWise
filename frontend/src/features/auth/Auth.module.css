@@ -5,6 +5,12 @@
   padding: var(--space-6);
 }
 .panel {
+  /* Preserve the visually approved authentication scale. */
+  --control-height-default: 2.75rem;
+  --font-control: var(--font-weight-semibold) var(--font-size-md) /
+    var(--line-height-body) var(--font-family-sans);
+  --font-section-heading: var(--font-weight-semibold) var(--font-size-xl) /
+    var(--line-height-heading) var(--font-family-sans);
   width: min(100%, 32rem);
   display: grid;
   gap: var(--space-6);
@@ -43,9 +49,15 @@
   color: var(--color-text-secondary);
 }
 .account {
-  max-width: 40rem;
+  max-width: 36rem;
   display: grid;
-  gap: var(--space-8);
+  gap: var(--space-6);
+}
+.account > header {
+  margin-block-end: 0;
+}
+.accountSection dl {
+  margin: 0;
 }
 .accountSection {
   display: grid;

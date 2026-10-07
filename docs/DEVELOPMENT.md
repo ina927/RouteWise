@@ -65,6 +65,16 @@ Copy-Item frontend/.env.example frontend/.env.local
   Production rejects a missing ID or `DEMO_MAP_ID`; there is no production demo
   fallback. Missing configuration keeps the shell usable with unavailable states.
 
+Mock bootstrap awaits `worker.start()` before importing the application/router
+and rendering React. The worker owns one shared startup promise, including
+concurrent calls; a rejected startup stays visible as a bootstrap failure.
+Normal React HMR keeps the running worker. If a replacement service worker
+claims the page, development reloads through the same startup barrier.
+As with any full reload, the in-memory mock login resets and protected pages
+redirect to Log in. The worker file is served at `/mockServiceWorker.js` and must
+match the installed MSW version. Production never imports or starts MSW, even
+when the mock environment flag is set. The real-API Vite proxy remains in place.
+
 The Google adapter uses the supported [async script loader and importLibrary](https://developers.google.com/maps/documentation/javascript/load-maps-js-api),
 [Place Autocomplete Data API](https://developers.google.com/maps/documentation/javascript/place-autocomplete-data)
 with session tokens and `Place.fetchFields`, and [Advanced Markers](https://developers.google.com/maps/documentation/javascript/advanced-markers/start).

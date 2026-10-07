@@ -11,6 +11,10 @@
   color: var(--color-success);
   font: var(--font-body-secondary);
 }
+.feedback:empty {
+  min-height: 0;
+  margin-block: var(--space-6);
+}
 .empty {
   display: grid;
   justify-items: start;
