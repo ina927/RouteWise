@@ -21,15 +21,24 @@
 }
 .brand {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  font: var(--font-card-title);
 }
-.brand svg {
+.brandIcon {
+  display: block;
+  inline-size: 56px;
+  block-size: 56px;
+  object-fit: contain;
+}
+.brandText {
   color: var(--color-primary);
-  width: var(--icon-size-lg);
-  height: var(--icon-size-lg);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
 }
 .heading {
   font: var(--font-section-heading);

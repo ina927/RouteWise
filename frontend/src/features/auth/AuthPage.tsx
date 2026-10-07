@@ -1,6 +1,5 @@
 import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { MapPinned } from 'lucide-react'
 import { login, signup } from '../../api/authApi'
 import { ApiError } from '../../api/httpClient'
 import { Button } from '../../components/ui/Button'
@@ -8,6 +7,7 @@ import { TextInput } from '../../components/ui/TextInput'
 import { usernameError, passwordError } from '../../utils/authValidation'
 import { useAuth } from './authContext'
 import styles from './Auth.module.css'
+import routeWiseIcon from '../../assets/RouteWise_Logo.png'
 
 export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
   const creating = mode === 'signup'
@@ -95,8 +95,12 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
     <main className={styles.standalone}>
       <section className={styles.panel} aria-labelledby="auth-heading">
         <div className={styles.brand}>
-          <MapPinned aria-hidden="true" />
-          RouteWise
+          <img
+            src={routeWiseIcon}
+            alt=""
+            className={styles.brandIcon}
+          />
+          <span className={styles.brandText}>RouteWise</span>
         </div>
         <h1 id="auth-heading" className={styles.heading}>
           {creating ? 'Create your account' : 'Log in'}

@@ -1,6 +1,7 @@
-import { Bookmark, MapPin, MapPinned, UserCircle, Users } from 'lucide-react'
+import { Bookmark, MapPin, UserCircle, Users } from 'lucide-react'
 import { Badge } from '../ui/Badge'
 import styles from './Sidebar.module.css'
+import routeWiseIcon from '../../assets/RouteWise_Logo.png';
 
 export type SidebarDestination = 'plan' | 'saved' | 'shared' | 'account'
 export type SidebarProps = {
@@ -26,8 +27,14 @@ export function Sidebar({
   return (
     <aside className={styles.sidebar}>
       <div className={styles.brand}>
-        <MapPinned aria-hidden="true" />
-        <span>RouteWise</span>
+        <div className={styles.brandIconBox}>
+          <img
+            src={routeWiseIcon}
+            alt=""
+            className={styles.brandIcon}
+          />
+        </div>
+        <span className={styles.brandText}>RouteWise</span>
       </div>
       <nav aria-label="Main navigation" className={styles.navigation}>
         <ul className={styles.list}>
