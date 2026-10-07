@@ -67,6 +67,7 @@ export function PlanJourneyPage() {
   const count = locationCount(draft)
   const request = buildRequest(draft)
   const busy = mutation.isPending
+  const settingsReady = Boolean(draft.travelMode && draft.objective)
   const points: PlanMarker[] = [
     ...(draft.start.place
       ? [
@@ -74,16 +75,34 @@ export function PlanJourneyPage() {
             id: draft.start.id,
             place: draft.start.place,
             role: 'start' as const,
+            label:
+              draft.endMode === 'returnToStart'
+                ? 'Start / Return to start'
+                : 'Start',
           },
         ]
       : []),
-    ...draft.destinations.flatMap((row) =>
+    ...draft.destinations.flatMap((row, index) =>
       row.place
-        ? [{ id: row.id, place: row.place, role: 'intermediate' as const }]
+        ? [
+            {
+              id: row.id,
+              place: row.place,
+              role: 'intermediate' as const,
+              label: `Stop ${index + 1}`,
+            },
+          ]
         : [],
     ),
     ...(draft.endMode === 'fixed' && draft.end.place
-      ? [{ id: draft.end.id, place: draft.end.place, role: 'end' as const }]
+      ? [
+          {
+            id: draft.end.id,
+            place: draft.end.place,
+            role: 'end' as const,
+            label: 'Fixed end',
+          },
+        ]
       : []),
   ]
 
@@ -100,7 +119,7 @@ export function PlanJourneyPage() {
         label={label}
         row={row}
         available={googleReady && !googleError}
-        disabled={busy}
+        disabled={busy || !settingsReady}
         canSelect={canSelectPlace(draft, row.id)}
         clearable={clearable}
         onChange={(query, place) => changePlace(row.id, query, place)}
@@ -163,7 +182,7 @@ export function PlanJourneyPage() {
           />
           <div className={styles.objective}>
             <SegmentedControl
-              label="Optimize for"
+              label="Optimise for"
               value={draft.objective ?? ''}
               disabled={busy}
               options={[
@@ -184,8 +203,18 @@ export function PlanJourneyPage() {
             {googleError}
           </p>
         )}
+        {!settingsReady && (
+          <p id="plan-settings-hint" className={styles.notice}>
+            Choose a travel mode and optimisation objective to add your places.
+          </p>
+        )}
         <div className={styles.workspace}>
-          <div className={styles.builder}>
+          <fieldset
+            className={styles.builder}
+            disabled={!settingsReady}
+            aria-label="Journey places"
+            aria-describedby={!settingsReady ? 'plan-settings-hint' : undefined}
+          >
             <section aria-labelledby="plan-start-heading">
               <h2 id="plan-start-heading" className={styles.label}>
                 Start
@@ -208,7 +237,7 @@ export function PlanJourneyPage() {
                 </span>
               </div>
               <p className={styles.help}>
-                Any order is fine — RouteWise will optimise it.
+                Add places in any order. RouteWise will optimise your route.
               </p>
               <div className={styles.places} data-places>
                 {draft.destinations.map((row, index) => (
@@ -306,7 +335,7 @@ export function PlanJourneyPage() {
                 Find best route
               </Button>
             </div>
-          </div>
+          </fieldset>
           <JourneyPlanMap
             points={points}
             ready={googleReady}

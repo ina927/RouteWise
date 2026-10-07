@@ -26,6 +26,7 @@ type PlacesLibrary = {
   AutocompleteSuggestion: {
     fetchAutocompleteSuggestions: (request: {
       input: string
+      language: string
       sessionToken: object
     }) => Promise<{ suggestions: { placePrediction?: Prediction }[] }>
   }
@@ -41,6 +42,17 @@ type MapInstance = {
   getMapCapabilities: () => { isAdvancedMarkersAvailable?: boolean }
 }
 type MapsLibrary = {
+  InfoWindow: new (options: { maxWidth: number }) => {
+    setContent: (content: HTMLElement) => void
+    setOptions: (options: { ariaLabel: string }) => void
+    open: (options: {
+      map: MapInstance
+      anchor: Marker
+      shouldFocus: boolean
+    }) => void
+    close: () => void
+    addListener: (name: string, callback: () => void) => { remove: () => void }
+  }
   Polyline: new (options: LineOptions) => Polyline
   Map: new (
     element: HTMLElement,
@@ -78,7 +90,12 @@ type Polyline = {
   setMap: (map: MapInstance | null) => void
   setOptions: (options: LineOptions) => void
 }
-type Marker = HTMLElement & { map: MapInstance | null }
+type Marker = HTMLElement & {
+  map: MapInstance | null
+  position: Coordinates
+  title: string
+  gmpClickable: boolean
+}
 type MarkerLibrary = {
   AdvancedMarkerElement: new (options: {
     map: MapInstance
@@ -171,7 +188,7 @@ export function loadGoogle(): Promise<GoogleRuntime> {
       else reject(fail())
     }
     script.async = true
-    script.src = `https://maps.googleapis.com/maps/api/js?${new URLSearchParams({ key, v: 'weekly', loading: 'async', callback: 'routeWiseGoogleReady' })}`
+    script.src = `https://maps.googleapis.com/maps/api/js?${new URLSearchParams({ key, v: 'weekly', language: 'en', loading: 'async', callback: 'routeWiseGoogleReady' })}`
     script.onerror = () => {
       clearTimeout(timer)
       reject(fail())
@@ -206,6 +223,7 @@ export function createPlaceSearch() {
       const { suggestions } = await bounded(
         library.AutocompleteSuggestion.fetchAutocompleteSuggestions({
           input,
+          language: 'en',
           sessionToken: token,
         }),
       )
@@ -288,6 +306,7 @@ export type PlanMarker = {
   id: string
   place: Place
   role: 'start' | 'intermediate' | 'end'
+  label: string
 }
 export type PlanMap = {
   update: (points: PlanMarker[]) => void
@@ -414,27 +433,104 @@ export async function createPlanMap(
   signal: AbortSignal,
 ): Promise<PlanMap> {
   const scene = await createMapScene(element, onFailure, signal)
-  let markers: Marker[] = []
-  function clear() {
-    markers.forEach((marker) => {
-      marker.map = null
-    })
-    markers = []
+  const info = new scene.maps.InfoWindow({ maxWidth: 280 })
+  const markers = new Map<
+    string,
+    {
+      marker: Marker
+      point: PlanMarker
+      onClick: () => void
+    }
+  >()
+  let selectedId: string | null = null
+  const closed = info.addListener('close', () => {
+    selectedId = null
+  })
+
+  function show(id: string, shouldFocus: boolean) {
+    const entry = markers.get(id)
+    if (!entry) return
+    const { point, marker } = entry
+    const content = document.createElement('div')
+    content.style.cssText =
+      'font: var(--font-body-secondary); color: var(--color-text); overflow-wrap: anywhere;'
+    const role = document.createElement('small')
+    role.textContent = point.label
+    role.style.cssText =
+      'font: var(--font-caption); color: var(--color-text-secondary);'
+    const name = document.createElement('h3')
+    name.textContent = point.place.name
+    name.style.cssText =
+      'font: var(--font-label); margin: var(--space-1) 0 var(--space-2);'
+    content.append(role, name)
+    if (point.place.address) {
+      const address = document.createElement('p')
+      address.textContent = point.place.address
+      address.style.marginBlock = '0 var(--space-2)'
+      content.append(address)
+    }
+    const link = document.createElement('a')
+    const url = new URL('https://www.google.com/maps/search/')
+    url.search = new URLSearchParams({
+      api: '1',
+      query: point.place.name,
+      query_place_id: point.place.placeId,
+    }).toString()
+    link.href = url.href
+    link.textContent = 'View on Google Maps'
+    link.target = '_blank'
+    link.rel = 'noopener noreferrer'
+    content.append(link)
+    selectedId = id
+    info.setContent(content)
+    info.setOptions({ ariaLabel: `${point.label}: ${point.place.name}` })
+    info.open({ map: scene.map, anchor: marker, shouldFocus })
   }
   return {
     update(points) {
-      clear()
-      markers = points.map((point) =>
-        scene.marker(
-          point.place.coordinates,
-          `${point.role === 'intermediate' ? 'Place to visit' : point.role === 'start' ? 'Start' : 'End'}: ${point.place.name}`,
-          point.role === 'intermediate',
-        ),
-      )
+      const ids = new Set(points.map((point) => point.id))
+      if (selectedId && !ids.has(selectedId)) {
+        selectedId = null
+        info.close()
+      }
+      for (const [id, entry] of markers) {
+        if (!ids.has(id)) {
+          entry.marker.removeEventListener('gmp-click', entry.onClick)
+          entry.marker.map = null
+          markers.delete(id)
+        }
+      }
+      for (const point of points) {
+        const title = `${point.label}: ${point.place.name}`
+        const existing = markers.get(point.id)
+        if (existing) {
+          existing.point = point
+          existing.marker.position = point.place.coordinates
+          existing.marker.title = title
+        } else {
+          const marker = scene.marker(
+            point.place.coordinates,
+            title,
+            point.role === 'intermediate',
+          )
+          marker.gmpClickable = true
+          const onClick = () => show(point.id, true)
+          marker.addEventListener('gmp-click', onClick)
+          markers.set(point.id, { marker, point, onClick })
+        }
+      }
       scene.fit(points.map((point) => point.place.coordinates))
+      if (selectedId) show(selectedId, false)
     },
     dispose() {
-      clear()
+      selectedId = null
+      closed.remove()
+      info.close()
+      markers.forEach(({ marker, onClick }) => {
+        marker.removeEventListener('gmp-click', onClick)
+        marker.map = null
+      })
+      markers.clear()
       scene.dispose()
     },
   }
@@ -454,7 +550,38 @@ export async function createRouteMap(
   const scene = await createMapScene(element, onFailure, signal)
   let markers: Marker[] = []
   let lines: { id: string; halo: Polyline; line: Polyline }[] = []
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
+  let frame: number | undefined
+  let animated: {
+    line: Polyline
+    icons: NonNullable<LineOptions['icons']>
+  } | null = null
+  function stopAnimation() {
+    if (frame !== undefined) cancelAnimationFrame(frame)
+    frame = undefined
+  }
+  function syncAnimation() {
+    stopAnimation()
+    const target = animated
+    if (!target) return
+    target.icons[0]!.offset = '0px'
+    target.line.setOptions({ icons: target.icons })
+    if (reducedMotion.matches || document.hidden) return
+    const started = performance.now()
+    function tick(now: number) {
+      if (!target) return
+      // One 16px dash interval per second, following the supplied segment path.
+      target.icons[0]!.offset = `${((now - started) * 0.016) % 16}px`
+      target.line.setOptions({ icons: target.icons })
+      frame = requestAnimationFrame(tick)
+    }
+    frame = requestAnimationFrame(tick)
+  }
+  reducedMotion.addEventListener('change', syncAnimation)
+  document.addEventListener('visibilitychange', syncAnimation)
   function clear() {
+    stopAnimation()
+    animated = null
     markers.forEach((marker) => {
       marker.map = null
     })
@@ -523,35 +650,42 @@ export async function createRouteMap(
       ])
     },
     highlight(hovered, selected) {
+      stopAnimation()
+      animated = null
       lines.forEach(({ id, line, halo }) => {
         const chosen = id === selected
         const preview = id === hovered
         halo.setOptions({ strokeWeight: chosen || preview ? 10 : 8 })
+        const icons: NonNullable<LineOptions['icons']> = chosen
+          ? [
+              {
+                icon: {
+                  path: 'M 0,-1 0,1',
+                  strokeColor: scene.colours.route,
+                  strokeOpacity: 1,
+                  strokeWeight: 5,
+                  scale: 3,
+                },
+                offset: '0',
+                repeat: '16px',
+              },
+            ]
+          : []
         line.setOptions({
           strokeOpacity: chosen ? 0 : 1,
           strokeWeight: preview ? 6 : 4,
           zIndex: chosen || preview ? 3 : 2,
-          icons: chosen
-            ? [
-                {
-                  icon: {
-                    path: 'M 0,-1 0,1',
-                    strokeColor: scene.colours.route,
-                    strokeOpacity: 1,
-                    strokeWeight: 5,
-                    scale: 3,
-                  },
-                  offset: '0',
-                  repeat: '16px',
-                },
-              ]
-            : [],
+          icons,
         })
+        if (chosen) animated = { line, icons }
       })
-      // Highlight changes never fit bounds or zoom; static dashes respect reduced motion.
+      // Highlight changes never fit bounds or zoom.
+      syncAnimation()
     },
     dispose() {
       clear()
+      reducedMotion.removeEventListener('change', syncAnimation)
+      document.removeEventListener('visibilitychange', syncAnimation)
       scene.dispose()
     },
   }
