@@ -18,7 +18,11 @@ journeys. Owners can search users and invite them from Journey Details. Removing
 a shared journey removes only the recipient relationship. `/login` and `/signup`
 are public; product routes require a username/password session. `/account` displays
 the username and provides logout and confirmed account deletion. Email is excluded.
-The C# API still exposes only `GET /api/health`; product endpoints use MSW locally.
+The C# API exposes health, signup, login, current-user lookup and logout. Accounts
+use hashed passwords in SQLite and HttpOnly server-managed cookie sessions. Account
+deletion and journey/sharing endpoints remain pending; keep the frontend on MSW
+for now. See
+[Authentication](docs/AUTHENTICATION.md) for setup, request protection and tests.
 
 ## Stack and structure
 
@@ -28,8 +32,9 @@ The C# API still exposes only `GET /api/health`; product endpoints use MSW local
 - `docs/`: scope, frontend direction, contract ownership and development guide.
 - `RouteWise.sln`: the two .NET projects; the frontend uses npm separately.
 
-SQLite, EF Core, LINQ and backend Google Routes integration belong to later
-implementation. Frontend Maps/Places presentation is implemented; live Google
+SQLite/EF Core persistence models, an initial migration and signup are implemented.
+Backend Google Routes integration belongs to later implementation.
+Frontend Maps/Places presentation is implemented; live Google
 verification awaits browser-key/billing activation. Frontend development uses MSW behind an HTTP API boundary before
 connecting real backend endpoints. Phase 2 contracts still await backend review.
 
