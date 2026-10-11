@@ -4,7 +4,10 @@ RouteWise is a desktop-first, single-day travel itinerary optimiser. Travellers
 choose places they already want to visit; the C# backend will recommend an efficient
 visiting order using Simulated Annealing.
 
-**Current phase: Phase 8.5, Authentication and Account.** `/` redirects to `/plan` for place
+**Frontend phase: Phase 8.5, Authentication and Account. Backend: accounts,
+saved journey management and sharing implemented; integration pending.**
+The frontend flows below currently use MSW for product API calls.
+`/` redirects to `/plan` for place
 selection and optimisation submission. `/plan/route` displays route order,
 totals/segments, automatic re-optimisation on setting changes, intermediate-only
 reordering via exact-order calculation, and local Reset to the latest successful
@@ -18,25 +21,36 @@ journeys. Owners can search users and invite them from Journey Details. Removing
 a shared journey removes only the recipient relationship. `/login` and `/signup`
 are public; product routes require a username/password session. `/account` displays
 the username and provides logout and confirmed account deletion. Email is excluded.
-The C# API exposes health, signup, login, current-user lookup and logout. Accounts
-use hashed passwords in SQLite and HttpOnly server-managed cookie sessions. Account
-deletion and journey/sharing endpoints remain pending; keep the frontend on MSW
-for now. See
+The C# API exposes health, signup, login, current-user lookup, logout and account
+deletion. Accounts use hashed passwords in SQLite and HttpOnly server-managed cookie
+sessions. The backend also supports journey creation, owned lists, owner/shared
+details, rename, duplication and deletion; username search; sending and listing
+invitations; accept/decline responses; and shared journey listing and removal.
+
+Journey PATCH currently supports **rename only**. Updating dates, annotations and
+route plans remains pending. Keep the frontend on MSW until real API integration
+is verified with Ina and route optimisation/cost integration is ready with Zoe.
+Repeat-invitation/reinvite rules remain provisional, and the current send-invitation
+lookup does not guarantee uniqueness under concurrent requests. Journey snapshot
+validation checks structure and consistency, not the authenticity of road costs.
+See
 [Authentication](docs/AUTHENTICATION.md) for setup, request protection and tests.
 
 ## Stack and structure
 
 - `frontend/`: React, TypeScript and Vite; React Router, TanStack Query and CSS Modules.
-- `backend/RouteWise.Api/`: C# .NET 9 ASP.NET Core Web API shell.
+- `backend/RouteWise.Api/`: C# .NET 9 ASP.NET Core Web API with EF Core/SQLite persistence.
 - `tests/RouteWise.Tests/`: .NET 9 NUnit project referencing the API.
 - `docs/`: scope, frontend direction, contract ownership and development guide.
 - `RouteWise.sln`: the two .NET projects; the frontend uses npm separately.
 
-SQLite/EF Core persistence models, an initial migration and signup are implemented.
+SQLite/EF Core persistence models and the initial migration support the implemented
+account, journey and invitation endpoints.
 Backend Google Routes integration belongs to later implementation.
 Frontend Maps/Places presentation is implemented; live Google
 verification awaits browser-key/billing activation. Frontend development uses MSW behind an HTTP API boundary before
-connecting real backend endpoints. Phase 2 contracts still await backend review.
+connecting real backend endpoints. Outstanding contract decisions include full
+journey update semantics, sharing retry/reinvite policies and route provenance.
 
 ## Team
 
@@ -80,8 +94,11 @@ MSW does not provide fake Places results or map tiles.
 Visit `/api/health` at either origin to check the API while both servers run.
 Stop each server with Ctrl+C.
 
-Run the test shell with `dotnet test RouteWise.sln`. No tests are expected in
-the foundation phases; successful execution does not represent assignment test coverage.
+Run the backend suite with `dotnet test RouteWise.sln`. The latest verified run
+passed 210 tests covering persistence, accounts, journey validation/management,
+user search, invitations and access isolation. Database tests use isolated test
+databases, not the developer's local data. This does not verify real frontend
+integration, live Google services or unfinished journey editing.
 
 See [Development](docs/DEVELOPMENT.md) for configuration and validation commands,
 [Project scope](docs/PROJECT_SCOPE.md) for product boundaries,

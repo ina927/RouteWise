@@ -46,6 +46,10 @@ app.UseAuthorization();
 
 app.MapHealthChecks("/api/health");
 app.MapAuthEndpoints();
+app.MapAccountEndpoints();
+app.MapJourneyEndpoints();
+app.MapUserEndpoints();
+app.MapInvitationEndpoints();
 
 app.Run();
 
