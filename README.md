@@ -27,8 +27,12 @@ sessions. The backend also supports journey creation, owned lists, owner/shared
 details, rename, duplication and deletion; username search; sending and listing
 invitations; accept/decline responses; and shared journey listing and removal.
 
-Journey PATCH currently supports **rename only**. Updating dates, annotations and
-route plans remains pending. Keep the frontend on MSW until real API integration
+Journey PATCH supports renaming, setting/clearing dates and replacing stop notes
+and planned times, and replacing the saved route plan. Replacement preserves the
+journey ID, owner and invitations. Omitted fields stay unchanged, except annotations
+for removed stops are dropped when replacing a plan; an empty annotation array clears
+all annotations. Route replacement is transactional, so a failed save preserves the
+original journey. Keep the frontend on MSW until real API integration
 is verified with Ina and route optimisation/cost integration is ready with Zoe.
 Repeat-invitation/reinvite rules remain provisional, and the current send-invitation
 lookup does not guarantee uniqueness under concurrent requests. Journey snapshot
@@ -95,10 +99,11 @@ Visit `/api/health` at either origin to check the API while both servers run.
 Stop each server with Ctrl+C.
 
 Run the backend suite with `dotnet test RouteWise.sln`. The latest verified run
-passed 210 tests covering persistence, accounts, journey validation/management,
+passed 256 tests covering persistence, accounts, journey validation/management,
 user search, invitations and access isolation. Database tests use isolated test
 databases, not the developer's local data. This does not verify real frontend
-integration, live Google services or unfinished journey editing.
+integration or live Google services. Route-update tests include annotation handling,
+preserved shared access and rollback after a database failure.
 
 See [Development](docs/DEVELOPMENT.md) for configuration and validation commands,
 [Project scope](docs/PROJECT_SCOPE.md) for product boundaries,

@@ -2,8 +2,9 @@
 
 Signup, login, current-user lookup, logout and account deletion are implemented.
 Journey management, user search and invitation sharing also use these authenticated
-sessions. Journey PATCH supports rename only; date, annotation and route-plan
-updates remain pending. Keep frontend MSW enabled until real frontend/API
+sessions. Journey PATCH supports name/date updates and replacement of stop notes
+and planned times, plus transactional route-plan replacement. Route updates preserve
+the journey ID, owner and invitations. Keep frontend MSW enabled until real frontend/API
 integration and the remaining routing dependencies are verified.
 
 | Method | Path | Success |
@@ -154,5 +155,6 @@ Journey, user-search and invitation integration tests exercise authenticated HTT
 requests against isolated temporary databases. They cover owner/recipient boundaries,
 public response fields, invitation state transitions, competing responses, pending
 access denial, shared removal and isolation between recipients. The latest verified
-full backend run passed 210 tests. Real browser integration with the C# API and
-unfinished journey editing are not established by this result.
+full backend run passed 256 tests. Route-update tests cover replacement plans,
+annotation handling, preserved shared access and rollback after a database failure.
+Real browser integration with the C# API is not established by this result.

@@ -1,7 +1,16 @@
 import { setupWorker } from 'msw/browser'
+import { http } from 'msw/http'
+import { passthrough } from 'msw'
+import { apiUrl } from '../api/config.ts'
 import { handlers } from './handlers/index.ts'
+import { routeHandlers } from './handlers/routes.ts'
 
-export const worker = setupWorker(...handlers)
+const activeHandlers =
+  import.meta.env.VITE_USE_REAL_BACKEND === 'true'
+    ? [...routeHandlers, http.all(apiUrl('/*'), () => passthrough())]
+    : handlers
+
+export const worker = setupWorker(...activeHandlers)
 let starting: Promise<void> | undefined
 
 // Keep the start promise beside the worker, so re-evaluating the bootstrap
