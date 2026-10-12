@@ -5,10 +5,12 @@ using RouteWise.Api.Authentication;
 using RouteWise.Api.Data;
 using RouteWise.Api.Endpoints;
 using RouteWise.Api.Models;
+using RouteWise.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddHealthChecks();
+builder.Services.AddScoped<JourneyService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddSingleton<MemoryTicketStore>();
 builder.Services.AddScoped<SessionCookieEvents>();

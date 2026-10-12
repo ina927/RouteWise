@@ -4,8 +4,15 @@ Signup, login, current-user lookup, logout and account deletion are implemented.
 Journey management, user search and invitation sharing also use these authenticated
 sessions. Journey PATCH supports name/date updates and replacement of stop notes
 and planned times, plus transactional route-plan replacement. Route updates preserve
-the journey ID, owner and invitations. Keep frontend MSW enabled until real frontend/API
-integration and the remaining routing dependencies are verified.
+the journey ID, owner and invitations. Optional integration mode has verified real
+login and saved-route editing in the browser while retaining simulated routing;
+see [Integration testing](INTEGRATION_TESTING.md). Full routing integration remains pending.
+
+Journey detail lookup delegates database and access checks to `JourneyService`.
+Its internal `ServiceResult<JourneyResponse>` is mapped by the endpoint to the
+existing 200/403/404 responses. Authentication remains enforced at the HTTP boundary;
+owner/shared-access rules remain enforced inside the service. Other operations
+have not yet been extracted into services.
 
 | Method | Path | Success |
 | --- | --- | --- |
@@ -157,4 +164,7 @@ public response fields, invitation state transitions, competing responses, pendi
 access denial, shared removal and isolation between recipients. The latest verified
 full backend run passed 256 tests. Route-update tests cover replacement plans,
 annotation handling, preserved shared access and rollback after a database failure.
-Real browser integration with the C# API is not established by this result.
+This suite passed again after the journey lookup service extraction. The suite
+alone does not establish browser integration. A separate browser check verified
+real login, saving and reopening an edited route, retained annotations, stable
+journey identity and leaving without saving, using simulated route calculation.

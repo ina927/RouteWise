@@ -5,8 +5,11 @@ choose places they already want to visit; the C# backend will recommend an effic
 visiting order using Simulated Annealing.
 
 **Frontend phase: Phase 8.5, Authentication and Account. Backend: accounts,
-saved journey management and sharing implemented; integration pending.**
-The frontend flows below currently use MSW for product API calls.
+saved journey management and sharing implemented; saved-route browser integration
+verified with simulated routing. Full routing integration remains pending.**
+Normal frontend mock mode uses MSW for product API calls. An optional integration
+mode uses the C# API for accounts/journeys/sharing and mocks only route calculation;
+see [Integration testing](docs/INTEGRATION_TESTING.md).
 `/` redirects to `/plan` for place
 selection and optimisation submission. `/plan/route` displays route order,
 totals/segments, automatic re-optimisation on setting changes, intermediate-only
@@ -32,8 +35,8 @@ and planned times, and replacing the saved route plan. Replacement preserves the
 journey ID, owner and invitations. Omitted fields stay unchanged, except annotations
 for removed stops are dropped when replacing a plan; an empty annotation array clears
 all annotations. Route replacement is transactional, so a failed save preserves the
-original journey. Keep the frontend on MSW until real API integration
-is verified with Ina and route optimisation/cost integration is ready with Zoe.
+original journey. The browser save-and-reopen flow has been verified against SQLite.
+Route optimisation/cost integration still needs Zoe's endpoints and team review.
 Repeat-invitation/reinvite rules remain provisional, and the current send-invitation
 lookup does not guarantee uniqueness under concurrent requests. Journey snapshot
 validation checks structure and consistency, not the authenticity of road costs.
@@ -50,11 +53,17 @@ See
 
 SQLite/EF Core persistence models and the initial migration support the implemented
 account, journey and invitation endpoints.
+Journey detail lookup now uses `Services/JourneyService.cs` for database access and
+owner/shared-access rules. It returns an internal `ServiceResult<JourneyResponse>`;
+the endpoint converts it to the existing HTTP response without changing frontend
+JSON. Other operations still use their existing endpoint implementations. Extending
+the result pattern across multiple suitable services remains required by the brief.
 Backend Google Routes integration belongs to later implementation.
 Frontend Maps/Places presentation is implemented; live Google
 verification awaits browser-key/billing activation. Frontend development uses MSW behind an HTTP API boundary before
 connecting real backend endpoints. Outstanding contract decisions include full
-journey update semantics, sharing retry/reinvite policies and route provenance.
+team sign-off on implemented journey update semantics, sharing retry/reinvite
+policies and route provenance.
 
 ## Team
 
@@ -104,6 +113,10 @@ user search, invitations and access isolation. Database tests use isolated test
 databases, not the developer's local data. This does not verify real frontend
 integration or live Google services. Route-update tests include annotation handling,
 preserved shared access and rollback after a database failure.
+The 256-test suite also passed after extracting journey lookup into `JourneyService`.
+Separately, a browser check verified real login, edited-route saving, persistence
+after refresh, unchanged journey identity, preserved annotations and leaving edits
+without saving. Routing was simulated; live Google services were not tested.
 
 See [Development](docs/DEVELOPMENT.md) for configuration and validation commands,
 [Project scope](docs/PROJECT_SCOPE.md) for product boundaries,

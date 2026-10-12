@@ -7,6 +7,7 @@ using RouteWise.Api.Mapping;
 using RouteWise.Api.Models;
 using RouteWise.Api.Contracts.Journeys;
 using RouteWise.Api.Validation;
+using RouteWise.Api.Services;
 
 namespace RouteWise.Api.Endpoints;
 
@@ -44,32 +45,25 @@ public static class JourneyEndpoints
     }
 
     private static async Task<IResult> GetJourneyAsync(string id, HttpContext context,
-        RouteWiseDbContext db, CancellationToken cancellationToken)
+        JourneyService service, CancellationToken cancellationToken)
     {
         context.Response.Headers.CacheControl = "no-store";
         var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var journey = await db.Journeys.AsNoTracking()
-            .Include(journey => journey.Owner)
-            .Include(journey => journey.Points)
-            .Include(journey => journey.Segments)
-            .SingleOrDefaultAsync(journey => journey.Id == id, cancellationToken);
+        if (userId is null)
+            return Results.Json(new { message = "Authentication required." },
+                statusCode: StatusCodes.Status401Unauthorized);
 
-        if (journey is null)
-            return Results.NotFound(new { message = "Journey not found." });
+        var result = await service.GetAsync(id, userId, cancellationToken);
+        if (result.IsSuccess)
+            return Results.Ok(result.Value!);
 
-        var isOwner = journey.OwnerId == userId;
-        if (!isOwner)
+        return result.Error switch
         {
-            var hasSharedAccess = await db.Invitations.AnyAsync(invitation =>
-                invitation.JourneyId == id && invitation.RecipientId == userId &&
-                invitation.Status == InvitationStatus.Accepted && !invitation.RemovedFromShared,
-                cancellationToken);
-            if (!hasSharedAccess)
-                return Results.Json(new { message = "Access denied." },
-                    statusCode: StatusCodes.Status403Forbidden);
-        }
-
-        return Results.Ok(JourneyMapper.ToResponse(journey, isOwner ? "owner" : "shared"));
+            ServiceError.NotFound => Results.NotFound(new { message = result.Message }),
+            ServiceError.Forbidden => Results.Json(new { message = result.Message },
+                statusCode: StatusCodes.Status403Forbidden),
+            _ => throw new InvalidOperationException("Unexpected result from journey lookup.")
+        };
     }
 
     private static async Task<IResult> CreateJourneyAsync(
