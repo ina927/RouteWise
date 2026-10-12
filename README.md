@@ -4,7 +4,13 @@ RouteWise is a desktop-first, single-day travel itinerary optimiser. Travellers
 choose places they already want to visit; the C# backend will recommend an efficient
 visiting order using Simulated Annealing.
 
-**Current phase: Phase 8.5, Authentication and Account.** `/` redirects to `/plan` for place
+**Frontend phase: Phase 8.5, Authentication and Account. Backend: accounts,
+saved journey management and sharing implemented; saved-route browser integration
+verified with simulated routing. Full routing integration remains pending.**
+Normal frontend mock mode uses MSW for product API calls. An optional integration
+mode uses the C# API for accounts/journeys/sharing and mocks only route calculation;
+see [Integration testing](docs/INTEGRATION_TESTING.md).
+`/` redirects to `/plan` for place
 selection and optimisation submission. `/plan/route` displays route order,
 totals/segments, automatic re-optimisation on setting changes, intermediate-only
 reordering via exact-order calculation, and local Reset to the latest successful
@@ -18,20 +24,46 @@ journeys. Owners can search users and invite them from Journey Details. Removing
 a shared journey removes only the recipient relationship. `/login` and `/signup`
 are public; product routes require a username/password session. `/account` displays
 the username and provides logout and confirmed account deletion. Email is excluded.
-The C# API still exposes only `GET /api/health`; product endpoints use MSW locally.
+The C# API exposes health, signup, login, current-user lookup, logout and account
+deletion. Accounts use hashed passwords in SQLite and HttpOnly server-managed cookie
+sessions. The backend also supports journey creation, owned lists, owner/shared
+details, rename, duplication and deletion; username search; sending and listing
+invitations; accept/decline responses; and shared journey listing and removal.
+
+Journey PATCH supports renaming, setting/clearing dates and replacing stop notes
+and planned times, and replacing the saved route plan. Replacement preserves the
+journey ID, owner and invitations. Omitted fields stay unchanged, except annotations
+for removed stops are dropped when replacing a plan; an empty annotation array clears
+all annotations. Route replacement is transactional, so a failed save preserves the
+original journey. The browser save-and-reopen flow has been verified against SQLite.
+Route optimisation/cost integration still needs Zoe's endpoints and team review.
+Repeat-invitation/reinvite rules remain provisional, and the current send-invitation
+lookup does not guarantee uniqueness under concurrent requests. Journey snapshot
+validation checks structure and consistency, not the authenticity of road costs.
+See
+[Authentication](docs/AUTHENTICATION.md) for setup, request protection and tests.
 
 ## Stack and structure
 
 - `frontend/`: React, TypeScript and Vite; React Router, TanStack Query and CSS Modules.
-- `backend/RouteWise.Api/`: C# .NET 9 ASP.NET Core Web API shell.
+- `backend/RouteWise.Api/`: C# .NET 9 ASP.NET Core Web API with EF Core/SQLite persistence.
 - `tests/RouteWise.Tests/`: .NET 9 NUnit project referencing the API.
 - `docs/`: scope, frontend direction, contract ownership and development guide.
 - `RouteWise.sln`: the two .NET projects; the frontend uses npm separately.
 
-SQLite, EF Core, LINQ and backend Google Routes integration belong to later
-implementation. Frontend Maps/Places presentation is implemented; live Google
+SQLite/EF Core persistence models and the initial migration support the implemented
+account, journey and invitation endpoints.
+Journey detail lookup now uses `Services/JourneyService.cs` for database access and
+owner/shared-access rules. It returns an internal `ServiceResult<JourneyResponse>`;
+the endpoint converts it to the existing HTTP response without changing frontend
+JSON. Other operations still use their existing endpoint implementations. Extending
+the result pattern across multiple suitable services remains required by the brief.
+Backend Google Routes integration belongs to later implementation.
+Frontend Maps/Places presentation is implemented; live Google
 verification awaits browser-key/billing activation. Frontend development uses MSW behind an HTTP API boundary before
-connecting real backend endpoints. Phase 2 contracts still await backend review.
+connecting real backend endpoints. Outstanding contract decisions include full
+team sign-off on implemented journey update semantics, sharing retry/reinvite
+policies and route provenance.
 
 ## Team
 
@@ -75,8 +107,16 @@ MSW does not provide fake Places results or map tiles.
 Visit `/api/health` at either origin to check the API while both servers run.
 Stop each server with Ctrl+C.
 
-Run the test shell with `dotnet test RouteWise.sln`. No tests are expected in
-the foundation phases; successful execution does not represent assignment test coverage.
+Run the backend suite with `dotnet test RouteWise.sln`. The latest verified run
+passed 256 tests covering persistence, accounts, journey validation/management,
+user search, invitations and access isolation. Database tests use isolated test
+databases, not the developer's local data. This does not verify real frontend
+integration or live Google services. Route-update tests include annotation handling,
+preserved shared access and rollback after a database failure.
+The 256-test suite also passed after extracting journey lookup into `JourneyService`.
+Separately, a browser check verified real login, edited-route saving, persistence
+after refresh, unchanged journey identity, preserved annotations and leaving edits
+without saving. Routing was simulated; live Google services were not tested.
 
 See [Development](docs/DEVELOPMENT.md) for configuration and validation commands,
 [Project scope](docs/PROJECT_SCOPE.md) for product boundaries,
