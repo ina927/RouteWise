@@ -1,6 +1,6 @@
 namespace RouteWise.Api.Services
 {
-    public class SimulatedAnnealingService
+    public class SimulatedAnnealingService : IRouteOptimiser
     {
         // calculate total cost of a route
         // costMatrix can contain distance (in metres) or duration (in seconds), depending on the user chosen objective
