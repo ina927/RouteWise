@@ -97,6 +97,26 @@ public sealed class JourneyUpdateTests
         await AssertRejectedUnchanged($"{{\"name\":{nameJson},\"date\":\"2026-10-20\"}}");
     }
 
+    [Test]
+    public async Task OverlongText_RejectsWholeUpdate()
+    {
+        await AssertRejectedUnchanged(JsonSerializer.Serialize(new { name = new string('a', 101), date = "2026-10-20" }));
+        await AssertRejectedUnchanged(JsonSerializer.Serialize(new { name = "Changed", annotations = new[] { new { pointId = "start", note = new string('a', 2001) } } }));
+    }
+
+    [Test]
+    public async Task DuplicateMaximumLengthName_CanStillBeUpdated()
+    {
+        var rename = await client.PatchAsJsonAsync(url, new { name = new string('a', 100) });
+        Assert.That(rename.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var response = await client.PostAsync($"{url}/duplicate", null);
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        var copy = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.That(copy.GetProperty("name").GetString(), Has.Length.EqualTo(100).And.EndsWith(" (copy)"));
+        var update = await client.PatchAsJsonAsync($"/api/journeys/{copy.GetProperty("id").GetString()}", new { date = "2026-10-20" });
+        Assert.That(update.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+    }
+
     [TestCase("[]", "[]")]
     [TestCase("[{\"pointId\":\"end\",\"note\":\"Meet Alex\",\"plannedTime\":\"12:30\"}]",
         "[{\"pointId\":\"end\",\"note\":\"Meet Alex\",\"plannedTime\":\"12:30\"}]")]

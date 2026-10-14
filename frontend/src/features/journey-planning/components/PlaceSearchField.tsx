@@ -62,9 +62,7 @@ export function PlaceSearchField({
           if (cancelled) return
           setSuggestions([])
           setStatus('error')
-          setMessage(
-            'Place search is unavailable. Edit your search to try again.',
-          )
+          setMessage('Edit your search to try loading places again.')
         })
     }, 300)
     return () => {
@@ -96,7 +94,7 @@ export function PlaceSearchField({
     } catch {
       if (version !== revision.current) return
       setStatus('error')
-      setMessage('Unable to select this place. Please choose a result again.')
+      setMessage('Please select the place again.')
     }
   }
 
@@ -113,13 +111,13 @@ export function PlaceSearchField({
       ? message
       : ''
     : !canSelect && !row.place
-      ? 'Location limit reached. Remove a location to select another.'
+      ? 'Remove a location before selecting another.'
       : status === 'loading'
         ? 'Searching…'
         : status === 'error'
           ? message
           : searching && status === 'ready' && !suggestions.length
-            ? 'No places found. Try another search.'
+            ? 'Try another search to find a place.'
             : row.query && !row.place
               ? 'Choose a search result to select a location.'
               : ''

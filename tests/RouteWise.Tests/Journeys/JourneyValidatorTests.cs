@@ -6,6 +6,18 @@ namespace RouteWise.Tests.Journeys;
 
 public sealed class JourneyValidatorTests
 {
+    [TestCase(100, true)]
+    [TestCase(101, false)]
+    public void NameLength_IsCheckedAfterTrimming(int length, bool valid) =>
+        Assert.That(JourneyValidator.Validate(Valid() with { Name = $"  {new string('a', length)}  " }) is null,
+            Is.EqualTo(valid));
+
+    [TestCase(2000, true)]
+    [TestCase(2001, false)]
+    public void NoteLength_IsCheckedAfterTrimming(int length, bool valid) =>
+        Assert.That(JourneyValidator.Validate(Valid() with { Annotations = [new("p0", $"  {new string('a', length)}  ", null)] }) is null,
+            Is.EqualTo(valid));
+
     [TestCase("open", 2)]
     [TestCase("fixed", 2)]
     [TestCase("returnToStart", 2)]

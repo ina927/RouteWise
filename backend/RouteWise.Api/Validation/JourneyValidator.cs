@@ -5,6 +5,9 @@ namespace RouteWise.Api.Validation;
 
 public static class JourneyValidator
 {
+    public const int NameLimit = 100;
+    public const int NoteLimit = 2000;
+
     public static string? Validate(CreateJourneyRequest? request)
     {
         if (request is null)
@@ -15,6 +18,11 @@ public static class JourneyValidator
         if (string.IsNullOrWhiteSpace(request.Name))
         {
             return "Journey name is required.";
+        }
+
+        if (request.Name.Trim().Length > NameLimit)
+        {
+            return $"Journey name must be {NameLimit} characters or fewer.";
         }
 
         if (request.Date is not null &&
@@ -230,6 +238,11 @@ public static class JourneyValidator
             if (!annotatedPointIds.Add(annotation.PointId))
             {
                 return "Only one annotation per route point is allowed.";
+            }
+
+            if (annotation.Note?.Trim().Length > NoteLimit)
+            {
+                return $"Note must be {NoteLimit} characters or fewer.";
             }
 
             if (annotation.PlannedTime is not null &&

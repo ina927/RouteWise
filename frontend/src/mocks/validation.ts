@@ -6,6 +6,7 @@ import type {
   RouteResult,
 } from '../contracts/routes.ts'
 import { MockError } from './http.ts'
+import { journeyNoteLimit } from '../utils/journeyValidation.ts'
 
 export function requireValid(
   condition: unknown,
@@ -251,6 +252,11 @@ export function parseAnnotations(
     requireValid(
       annotation.note === undefined || typeof annotation.note === 'string',
       'Note must be text.',
+    )
+    requireValid(
+      typeof annotation.note !== 'string' ||
+        annotation.note.trim().length <= journeyNoteLimit,
+      `Note must be ${journeyNoteLimit} characters or fewer.`,
     )
     requireValid(
       annotation.plannedTime === undefined ||
