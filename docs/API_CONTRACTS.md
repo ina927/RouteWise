@@ -48,7 +48,7 @@ Value sets:
 - `TravelMode`: `walking | driving`
 - `OptimisationObjective`: `distance | time`
 - `EndMode`: `open | returnToStart | fixed`
-- `InvitationStatus`: `pending | accepted | declined`
+- `InvitationStatus`: `pending | accepted | declined | removed`
 
 `Coordinates = { lat, lng }` uses numeric WGS84 latitude/longitude.
 `Place = { placeId, name, address?, coordinates }` contains minimal Google place
@@ -244,6 +244,14 @@ send its invitations. Remove from Shared calls its own endpoint, never DELETE
 `/journeys/:id`. It removes only this recipient's listing/read access; owner data
 and other recipients remain untouched.
 
+Removed invitations are returned with `status: 'removed'`, derived from the
+existing `RemovedFromShared` flag; the stored status remains Accepted. Owners
+may resend through the same POST endpoint (201 Invitation), reusing the existing
+invitation ID and setting Pending with `RemovedFromShared = false`. Read access
+returns only after the recipient accepts again. Pending, Accepted, and Declined
+invitations still reject repeat sends with 409. Competing reinvites conditionally
+update the same removed record, so only one succeeds.
+
 **Nam review required:** save snapshots, patch/annotation semantics, date/time,
 summaries, rename/duplicate/delete, user search privacy, invitations/state changes,
 owner/shared access and recipient removal/history.
@@ -260,7 +268,8 @@ success JSON remains an error. No-content operations return undefined.
 - 401: unauthenticated product access/current-user lookup or generic invalid login.
 - 403: missing shared access or attempts at owner-only operations.
 - 404: unknown journey/user/invitation or missing accepted shared relationship.
-- 409: duplicate username (case-insensitive), or mock-only repeated invitation or response to an already answered invitation.
+- 409: duplicate username (case-insensitive), repeated invitation unless removed,
+  or response to an already answered invitation.
 - 501: mock-only missing API handler/method.
 
 Mock validation covers confirmed rules and transport consistency, not speculative
@@ -288,11 +297,6 @@ The following are **MOCK-ONLY**, not confirmed product behaviour:
   seed and mode divisor. No real optimisation/routing or Simulated Annealing.
 - Monotonic created IDs, duplicate suffix `(copy)`, insertion-order lists.
 - Case-insensitive substring user search, empty query -> `[]`, self excluded.
-- Repeated invitations for the same recipient/journey return 409 regardless of
-  previous state; already-answered responses also return 409. Reinvite/retry and
-  idempotency policies are not established by this choice.
-- Removal retains accepted invitation history while removing this recipient's
-  listing/read access; no fourth invitation status is introduced.
 - Removed-point annotation pruning and invitation cleanup on deletion are
   proposed/mock consistency behaviour, not a backend storage design.
 

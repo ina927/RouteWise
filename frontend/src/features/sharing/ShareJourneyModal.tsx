@@ -41,6 +41,9 @@ export function ShareJourneyModal({
     enabled: Boolean(debounced) && !searching && Boolean(term),
     retry: false,
   })
+  const blockingInvitations = (invitations.data ?? []).filter(
+    (item) => item.status !== 'removed',
+  )
   // The legacy boundary may match other fields; only username matches can be selected.
   const suggestions =
     !searching && invitations.isSuccess && !invitations.isFetching
@@ -49,11 +52,25 @@ export function ShareJourneyModal({
             user.username
               .toLocaleLowerCase()
               .includes(term.toLocaleLowerCase()) &&
-            !invitations.data.some((item) => item.recipient.id === user.id),
+            !blockingInvitations.some((item) => item.recipient.id === user.id),
         )
       : []
   const showSuggestions =
     expanded && !selected && Boolean(term) && suggestions.length > 0
+  const alreadyInvited =
+    blockingInvitations.some(
+      (item) =>
+        item.recipient.username.toLocaleLowerCase() ===
+        term.toLocaleLowerCase(),
+    ) ||
+    (users.isSuccess &&
+      !users.isFetching &&
+      !suggestions.length &&
+      blockingInvitations.some((item) =>
+        item.recipient.username
+          .toLocaleLowerCase()
+          .includes(term.toLocaleLowerCase()),
+      ))
   function select(user: UserSummary) {
     setSelected(user)
     setExpanded(false)
@@ -79,7 +96,7 @@ export function ShareJourneyModal({
       guard.current ||
       !invitations.isSuccess ||
       invitations.isFetching ||
-      invitations.data.some((item) => item.recipient.id === recipientId)
+      blockingInvitations.some((item) => item.recipient.id === recipientId)
     )
       return
     guard.current = true
@@ -234,7 +251,7 @@ export function ShareJourneyModal({
                   !selected ||
                   !invitations.isSuccess ||
                   invitations.isFetching ||
-                  invitations.data.some(
+                  blockingInvitations.some(
                     (item) => item.recipient.id === selected.id,
                   )
                 }
@@ -248,7 +265,16 @@ export function ShareJourneyModal({
               </Button>
             </div>
           </div>
-          {!selected && term && (searching || users.isPending) ? (
+          {!selected &&
+          term &&
+          invitations.isSuccess &&
+          !invitations.isFetching &&
+          !searching &&
+          alreadyInvited ? (
+            <p role="alert" className={styles.error}>
+              This user has already been invited to this journey.
+            </p>
+          ) : !selected && term && (searching || users.isPending) ? (
             <p role="status" className={styles.secondary}>
               Searching users?
             </p>

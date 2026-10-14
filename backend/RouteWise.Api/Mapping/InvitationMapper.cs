@@ -30,7 +30,7 @@ public static class InvitationMapper
             invitation.Recipient.Id,
             invitation.Recipient.Username);
 
-        var status = invitation.Status switch
+        var status = invitation.RemovedFromShared ? "removed" : invitation.Status switch
         {
             InvitationStatus.Pending => "pending",
             InvitationStatus.Accepted => "accepted",

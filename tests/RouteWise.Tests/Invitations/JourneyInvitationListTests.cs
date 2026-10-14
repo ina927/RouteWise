@@ -69,7 +69,7 @@ public sealed class JourneyInvitationListTests
         Assert.That(body.EnumerateArray().Select(item => item.GetProperty("id").GetString()),
             Is.EquivalentTo(expectedIds));
         Assert.That(body.EnumerateArray().Select(item => item.GetProperty("status").GetString()),
-            Is.EquivalentTo(new[] { "pending", "accepted", "declined", "accepted" }));
+            Is.EquivalentTo(new[] { "pending", "accepted", "declined", "removed" }));
         foreach (var item in body.EnumerateArray())
         {
             var journey = item.GetProperty("journey");

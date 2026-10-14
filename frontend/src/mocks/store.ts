@@ -3,6 +3,10 @@ import type { Invitation } from '../contracts/sharing.ts'
 import type { UserSummary } from '../contracts/users.ts'
 import { createSeed, mockUsers, type MockInvitation } from './data/seed.ts'
 import { usernameError, passwordError } from '../utils/authValidation.ts'
+import {
+  journeyNameError,
+  journeyNameLimit,
+} from '../utils/journeyValidation.ts'
 import { MockError } from './http.ts'
 import {
   object,
@@ -92,7 +96,7 @@ function invitation(item: MockInvitation): Invitation {
     journey: summary(findJourney(item.journeyId)),
     sender: user(item.senderId),
     recipient: user(item.recipientId),
-    status: item.status,
+    status: removedShares.has(item.id) ? 'removed' : item.status,
   }
 }
 
@@ -119,6 +123,7 @@ export function listSharedJourneys() {
 export function createMockJourney(value: unknown) {
   const body = object(value)
   const name = text(body.name, 'Journey name')
+  requireValid(!journeyNameError(name), journeyNameError(name) ?? '')
   const plan = parsePlan(body.plan)
   const annotations = parseAnnotations(
     body.annotations ?? [],
@@ -149,6 +154,7 @@ export function updateMockJourney(id: string, value: unknown) {
   // Validate the complete next state before mutation, including annotations.
   const next = structuredClone(current)
   if (body.name !== undefined) next.name = text(body.name, 'Journey name')
+  requireValid(!journeyNameError(next.name), journeyNameError(next.name) ?? '')
   if (body.date === null) delete next.date
   else if (body.date !== undefined) next.date = parseDate(body.date)
   if (body.plan !== undefined) next.plan = parsePlan(body.plan)
@@ -167,7 +173,7 @@ export function updateMockJourney(id: string, value: unknown) {
 export function duplicateMockJourney(id: string) {
   const copy = structuredClone(ownedJourney(id))
   copy.id = `journey-created-${++sequence}`
-  copy.name = `${copy.name} (copy)` // Mock-only; final duplicate naming is undecided.
+  copy.name = `${copy.name.slice(0, journeyNameLimit - 7).trimEnd()} (copy)`
   state.journeys.push(copy)
   // Invitations live separately and are deliberately not copied.
   return getMockJourney(copy.id)
@@ -209,16 +215,18 @@ export function sendMockInvitation(journeyId: string, recipientId: string) {
   ownedJourney(journeyId)
   user(recipientId)
   requireValid(recipientId !== viewerId, 'Choose another user to invite.')
-  // Mock-only repeat-invitation policy; backend/product handling is not agreed.
-  if (
-    state.invitations.some(
-      (item) =>
-        item.journeyId === journeyId && item.recipientId === recipientId,
-    )
-  ) {
+  const existing = state.invitations.find(
+    (item) => item.journeyId === journeyId && item.recipientId === recipientId,
+  )
+  if (existing) {
+    if (existing.status === 'accepted' && removedShares.has(existing.id)) {
+      existing.status = 'pending'
+      removedShares.delete(existing.id)
+      return invitation(existing)
+    }
     throw new MockError(
       409,
-      'Mock-only: an invitation already exists for this recipient and journey.',
+      'This user has already been invited to this journey.',
     )
   }
   const item: MockInvitation = {

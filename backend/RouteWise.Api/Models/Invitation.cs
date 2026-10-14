@@ -10,6 +10,6 @@ public sealed class Invitation
     public string RecipientId { get; set; } = string.Empty;
     public User Recipient { get; set; } = null!;
     public InvitationStatus Status { get; set; } = InvitationStatus.Pending;
-    // Proposed storage for removal without introducing a fourth status.
+    // Retain acceptance history; expose removal as a derived response status.
     public bool RemovedFromShared { get; set; }
 }
