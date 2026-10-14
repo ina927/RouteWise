@@ -44,8 +44,10 @@ public static class JourneyEndpoints
         return Results.Ok(summaries);
     }
 
-    private static async Task<IResult> GetJourneyAsync(string id, HttpContext context,
-        JourneyService service, CancellationToken cancellationToken)
+    private static async Task<IResult> GetJourneyAsync(
+        string id, HttpContext context,
+        IJourneyService service, 
+        CancellationToken cancellationToken)
     {
         context.Response.Headers.CacheControl = "no-store";
         var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
