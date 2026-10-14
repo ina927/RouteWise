@@ -4,7 +4,16 @@
 frontend boundary, not an approved backend contract or a persistence schema.
 Ina defines UI needs; Zoe reviews routing; Nam reviews journeys/users/sharing.
 Discuss changes before backend implementation and freeze agreed touchpoints before
-integration. No C# DTOs or backend product endpoints were added.
+integration. The original proposal predates the C# implementation. Accounts,
+journeys and sharing now have backend DTOs and endpoints; this implementation and
+its tests do not imply team sign-off on every proposed or unresolved policy.
+See [Authentication](AUTHENTICATION.md) and [Persistence](PERSISTENCE.md) for current
+implementation status, and [Integration testing](INTEGRATION_TESTING.md) for the
+browser check using real persistence and simulated routing.
+
+The internal backend `ServiceResult<T>` pattern currently used by journey lookup
+does not change this HTTP contract: success still returns the DTO directly and
+errors still return `{ message }`. Do not add a result wrapper to frontend contracts.
 
 ## Boundary and conventions
 
@@ -313,7 +322,8 @@ and state, not browser service-worker registration, UI or ASP.NET product APIs.
 
 ## NAM HANDOVER: Authentication and Account (Phase 8.5)
 
-Frontend/MSW contract, pending real ASP.NET implementation. The account model is
+Frontend/MSW contract, now implemented in ASP.NET; see AUTHENTICATION.md for
+implementation and verification details. The account model is
 username + password only. There is no email, full name, profile, username/password
 editing or recovery. CurrentUser aliases UserSummary but means authenticated
 session identity. Production must use a server-managed HttpOnly cookie/session;
