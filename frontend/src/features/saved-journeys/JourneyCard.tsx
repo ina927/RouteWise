@@ -1,5 +1,6 @@
 import type { JourneySummary } from '../../contracts/journeys'
 import { JourneyCardView } from '../journeys/JourneyCardView'
+import { JourneySharingStatus } from '../sharing/JourneySharingStatus'
 import { CardActions, type CardAction } from './CardActions'
 import styles from './SavedJourneys.module.css'
 export function JourneyCard({
@@ -23,6 +24,7 @@ export function JourneyCard({
         <CardActions name={journey.name} disabled={busy} onAction={onAction} />
       }
     >
+      <JourneySharingStatus journeyId={journey.id} />
       {busy && (
         <p role="status" className={styles.cardStatus}>
           Duplicating journey?

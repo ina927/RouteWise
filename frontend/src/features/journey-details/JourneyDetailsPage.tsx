@@ -29,6 +29,7 @@ import { DetailFieldEditor } from './DetailFieldEditor'
 import { JourneyItinerary, type EditingField } from './JourneyItinerary'
 import { journeyKey, useJourneyUpdate } from './journeyData'
 import { ShareJourneyModal } from '../sharing/ShareJourneyModal'
+import { JourneySharingStatus } from '../sharing/JourneySharingStatus'
 import styles from './JourneyDetails.module.css'
 
 export function JourneyDetailsPage() {
@@ -125,14 +126,16 @@ function JourneyDetails({ journey }: { journey: Journey }) {
               />
             )}
             {owner && (
-              <Button
-                leadingIcon={Share2}
-                className={styles.share}
-                disabled={Boolean(editing) || updates.pending}
-                onClick={() => setSharing(true)}
-              >
-                Share
-              </Button>
+              <div className={styles.share}>
+                <Button
+                  leadingIcon={Share2}
+                  disabled={Boolean(editing) || updates.pending}
+                  onClick={() => setSharing(true)}
+                >
+                  Share
+                </Button>
+                <JourneySharingStatus journeyId={journey.id} />
+              </div>
             )}
           </div>
         )}
