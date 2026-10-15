@@ -10,7 +10,7 @@ using RouteWise.Api.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddHealthChecks();
-builder.Services.AddScoped<JourneyService>();
+builder.Services.AddScoped<IJourneyService, JourneyService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddSingleton<MemoryTicketStore>();
 builder.Services.AddScoped<SessionCookieEvents>();
