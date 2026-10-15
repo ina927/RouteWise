@@ -67,6 +67,35 @@ export function canAddRow(draft: PlanningDraft): boolean {
   return draft.destinations.length < 10 - endpoints && locationCount(draft) < 10
 }
 
+export function planningError(draft: PlanningDraft): string | undefined {
+  const destinations = draft.destinations.flatMap((row) =>
+    row.place ? [row.place] : [],
+  )
+  const end = draft.endMode === 'fixed' ? draft.end.place : null
+  if (end && destinations.some((place) => place.placeId === end.placeId))
+    return 'Remove this place from Places to visit to use it as your fixed end.'
+  if (end && end.placeId === draft.start.place?.placeId)
+    return 'Choose Return to start to finish at your starting place.'
+  if (
+    destinations.some((place) => place.placeId === draft.start.place?.placeId)
+  )
+    return 'Remove your starting place from Places to visit.'
+  if (
+    new Set(destinations.map((place) => place.placeId)).size !==
+    destinations.length
+  )
+    return 'Remove duplicate places from Places to visit.'
+  if (draft.destinations.some((row) => row.query.trim() && !row.place))
+    return 'Select a search result or clear the unfinished search.'
+  if (
+    draft.endMode === 'returnToStart' &&
+    draft.start.place &&
+    !destinations.length
+  )
+    return 'Add at least one place to visit before returning to the start.'
+  return undefined
+}
+
 export function buildRequest(
   draft: PlanningDraft,
 ): OptimizeRouteRequest | null {
@@ -75,7 +104,8 @@ export function buildRequest(
     !draft.objective ||
     !draft.endMode ||
     !draft.start.place ||
-    locationCount(draft) > 10
+    locationCount(draft) > 10 ||
+    planningError(draft)
   )
     return null
   const destinations: RoutePoint[] = draft.destinations.flatMap((row) =>

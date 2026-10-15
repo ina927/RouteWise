@@ -1,7 +1,7 @@
 import type { JourneySummary } from './journeys.ts'
 import type { UserSummary } from './users.ts'
 
-export type InvitationStatus = 'pending' | 'accepted' | 'declined'
+export type InvitationStatus = 'pending' | 'accepted' | 'declined' | 'removed'
 
 export type Invitation = {
   id: string

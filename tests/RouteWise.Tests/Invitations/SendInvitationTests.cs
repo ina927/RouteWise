@@ -138,7 +138,7 @@ public sealed class SendInvitationTests
     [TestCase(InvitationStatus.Pending)]
     [TestCase(InvitationStatus.Accepted)]
     [TestCase(InvitationStatus.Declined)]
-    public async Task ExistingInvitation_ReturnsConflictUnderProvisionalPolicy(InvitationStatus status)
+    public async Task ExistingActiveOrDeclinedInvitation_ReturnsConflict(InvitationStatus status)
     {
         var first = await owner.PostAsJsonAsync(Url, new { recipientId });
         Assert.That(first.StatusCode, Is.EqualTo(HttpStatusCode.Created));
@@ -153,6 +153,116 @@ public sealed class SendInvitationTests
         using var checkScope = app.Services.CreateScope();
         var stored = await checkScope.ServiceProvider.GetRequiredService<RouteWiseDbContext>().Invitations.SingleAsync();
         Assert.That(stored.Status, Is.EqualTo(status));
+    }
+
+    [TestCase("accepted", HttpStatusCode.OK)]
+    [TestCase("declined", HttpStatusCode.Forbidden)]
+    public async Task RemovedInvitation_CanBeReusedWithoutAffectingOtherRecipients(
+        string responseStatus, HttpStatusCode expectedAccess)
+    {
+        using var other = app.CreateApiClient();
+        var otherId = await Signup(other, "Quinn");
+        var otherSent = await owner.PostAsJsonAsync(Url, new { recipientId = otherId });
+        Assert.That(otherSent.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        var otherInvitationId = (await otherSent.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetString()!;
+        Assert.That((await other.PatchAsJsonAsync($"/api/invitations/{otherInvitationId}",
+            new { status = "accepted" })).StatusCode, Is.EqualTo(HttpStatusCode.OK));
+
+        var invitationId = await CreateRemovedInvitation();
+        var list = await owner.GetFromJsonAsync<JsonElement>(Url);
+        var removed = list.EnumerateArray().Single(item => item.GetProperty("id").GetString() == invitationId);
+        Assert.That(removed.GetProperty("status").GetString(), Is.EqualTo("removed"));
+        var incoming = await recipient.GetFromJsonAsync<JsonElement>("/api/invitations");
+        Assert.That(incoming[0].GetProperty("status").GetString(), Is.EqualTo("removed"));
+        await AssertError(await recipient.PatchAsJsonAsync($"/api/invitations/{invitationId}",
+            new { status = "accepted" }), HttpStatusCode.Conflict);
+
+        var resent = await owner.PostAsJsonAsync(Url, new { recipientId });
+        Assert.That(resent.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        var pending = await resent.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.That(pending.GetProperty("id").GetString(), Is.EqualTo(invitationId));
+        Assert.That(pending.GetProperty("status").GetString(), Is.EqualTo("pending"));
+        await AssertCount(2);
+        using (var scope = app.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<RouteWiseDbContext>();
+            var stored = await db.Invitations.SingleAsync(item => item.Id == invitationId);
+            Assert.That(stored.Status, Is.EqualTo(InvitationStatus.Pending));
+            Assert.That(stored.RemovedFromShared, Is.False);
+            var unchanged = await db.Invitations.SingleAsync(item => item.Id == otherInvitationId);
+            Assert.That(unchanged.Status, Is.EqualTo(InvitationStatus.Accepted));
+            Assert.That(unchanged.RemovedFromShared, Is.False);
+        }
+        incoming = await recipient.GetFromJsonAsync<JsonElement>("/api/invitations");
+        Assert.That(incoming.GetArrayLength(), Is.EqualTo(1));
+        Assert.That(incoming[0].GetProperty("status").GetString(), Is.EqualTo("pending"));
+        list = await owner.GetFromJsonAsync<JsonElement>(Url);
+        Assert.That(list.EnumerateArray().Single(item => item.GetProperty("id").GetString() == invitationId)
+            .GetProperty("status").GetString(), Is.EqualTo("pending"));
+        Assert.That((await recipient.GetAsync($"/api/journeys/{journeyId}")).StatusCode,
+            Is.EqualTo(HttpStatusCode.Forbidden));
+        Assert.That((await recipient.GetFromJsonAsync<JsonElement>("/api/shared-journeys")).GetArrayLength(), Is.Zero);
+        Assert.That((await other.GetAsync($"/api/journeys/{journeyId}")).StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        await AssertError(await owner.PostAsJsonAsync(Url, new { recipientId }), HttpStatusCode.Conflict);
+
+        var answered = await recipient.PatchAsJsonAsync($"/api/invitations/{invitationId}", new { status = responseStatus });
+        Assert.That(answered.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That((await answered.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("status").GetString(),
+            Is.EqualTo(responseStatus));
+        Assert.That((await recipient.GetAsync($"/api/journeys/{journeyId}")).StatusCode, Is.EqualTo(expectedAccess));
+        Assert.That((await recipient.GetFromJsonAsync<JsonElement>("/api/shared-journeys")).GetArrayLength(),
+            Is.EqualTo(responseStatus == "accepted" ? 1 : 0));
+        Assert.That((await recipient.PatchAsJsonAsync($"/api/journeys/{journeyId}", new { name = "Changed" })).StatusCode,
+            Is.EqualTo(HttpStatusCode.Forbidden));
+        Assert.That((await other.GetAsync($"/api/journeys/{journeyId}")).StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That((await other.GetFromJsonAsync<JsonElement>("/api/shared-journeys")).GetArrayLength(), Is.EqualTo(1));
+        await AssertError(await owner.PostAsJsonAsync(Url, new { recipientId }), HttpStatusCode.Conflict);
+        await AssertCount(2);
+    }
+
+    [Test]
+    public async Task RemovedInvitation_CompetingReinvitesReuseOneRecord()
+    {
+        var invitationId = await CreateRemovedInvitation();
+        var responses = await Task.WhenAll(
+            owner.PostAsJsonAsync(Url, new { recipientId }),
+            owner.PostAsJsonAsync(Url, new { recipientId }));
+        Assert.That(responses.Select(response => response.StatusCode),
+            Is.EquivalentTo(new[] { HttpStatusCode.Created, HttpStatusCode.Conflict }));
+        var winner = await responses.Single(response => response.StatusCode == HttpStatusCode.Created)
+            .Content.ReadFromJsonAsync<JsonElement>();
+        Assert.That(winner.GetProperty("id").GetString(), Is.EqualTo(invitationId));
+        Assert.That(winner.GetProperty("status").GetString(), Is.EqualTo("pending"));
+        await AssertCount(1);
+    }
+
+    [Test]
+    public async Task RemovedInvitation_CannotBeReinvitedByNonOwner()
+    {
+        var invitationId = await CreateRemovedInvitation();
+        using var other = app.CreateApiClient();
+        await Signup(other, "Quinn");
+        await AssertError(await recipient.PostAsJsonAsync(Url, new { recipientId }), HttpStatusCode.Forbidden);
+        await AssertError(await other.PostAsJsonAsync(Url, new { recipientId }), HttpStatusCode.Forbidden);
+        using var anonymous = app.CreateApiClient();
+        await AssertError(await anonymous.PostAsJsonAsync(Url, new { recipientId }), HttpStatusCode.Unauthorized);
+        using var scope = app.Services.CreateScope();
+        var stored = await scope.ServiceProvider.GetRequiredService<RouteWiseDbContext>().Invitations.SingleAsync();
+        Assert.That(stored.Id, Is.EqualTo(invitationId));
+        Assert.That(stored.Status, Is.EqualTo(InvitationStatus.Accepted));
+        Assert.That(stored.RemovedFromShared, Is.True);
+    }
+
+    private async Task<string> CreateRemovedInvitation()
+    {
+        var sent = await owner.PostAsJsonAsync(Url, new { recipientId });
+        Assert.That(sent.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        var invitationId = (await sent.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetString()!;
+        Assert.That((await recipient.PatchAsJsonAsync($"/api/invitations/{invitationId}",
+            new { status = "accepted" })).StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That((await recipient.DeleteAsync($"/api/shared-journeys/{journeyId}")).StatusCode,
+            Is.EqualTo(HttpStatusCode.NoContent));
+        return invitationId;
     }
 
     private async Task AssertCount(int expected)

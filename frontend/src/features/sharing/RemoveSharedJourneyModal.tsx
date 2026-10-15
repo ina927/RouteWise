@@ -5,7 +5,7 @@ import type { JourneySummary } from '../../contracts/journeys'
 import { Modal } from '../../components/ui/Modal'
 import { Button } from '../../components/ui/Button'
 import { journeyKey } from '../journey-details/journeyData'
-import { sharedJourneysKey } from './sharingData'
+import { incomingInvitationsKey, sharedJourneysKey } from './sharingData'
 import styles from './Sharing.module.css'
 
 export function RemoveSharedJourneyModal({
@@ -31,7 +31,10 @@ export function RemoveSharedJourneyModal({
       client.setQueryData<JourneySummary[]>(sharedJourneysKey, (current) =>
         current?.filter((item) => item.id !== journey.id),
       )
-      await client.invalidateQueries({ queryKey: sharedJourneysKey })
+      await Promise.all([
+        client.invalidateQueries({ queryKey: sharedJourneysKey }),
+        client.invalidateQueries({ queryKey: incomingInvitationsKey }),
+      ])
     },
   })
   async function remove() {

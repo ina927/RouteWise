@@ -7,6 +7,10 @@ import { Modal } from '../../components/ui/Modal'
 import { TextInput } from '../../components/ui/TextInput'
 import { Button } from '../../components/ui/Button'
 import { cacheJourney } from './journeyData'
+import {
+  journeyNameError,
+  journeyNameLimit,
+} from '../../utils/journeyValidation'
 import styles from './JourneyDetails.module.css'
 
 export function SaveJourneyModal({
@@ -25,9 +29,10 @@ export function SaveJourneyModal({
   const client = useQueryClient()
   const navigate = useNavigate()
   const mutation = useMutation({ mutationFn: createJourney })
+  const nameError = journeyNameError(name)
   async function submit() {
     setAttempted(true)
-    if (!name.trim() || guard.current) return
+    if (nameError || guard.current) return
     guard.current = true
     try {
       const journey = await mutation.mutateAsync({
@@ -87,8 +92,11 @@ export function SaveJourneyModal({
           value={name}
           disabled={mutation.isPending}
           onChange={(event) => setName(event.target.value)}
+          helperText={`${name.trim().length} / ${journeyNameLimit} characters`}
           error={
-            attempted && !name.trim() ? 'Enter a journey name.' : undefined
+            attempted || name.trim().length > journeyNameLimit
+              ? nameError
+              : undefined
           }
         />
         <TextInput

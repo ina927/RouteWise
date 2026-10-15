@@ -6,6 +6,10 @@ import { Modal } from '../../components/ui/Modal'
 import { Button } from '../../components/ui/Button'
 import { TextInput } from '../../components/ui/TextInput'
 import {
+  journeyNameError,
+  journeyNameLimit,
+} from '../../utils/journeyValidation'
+import {
   cacheJourney,
   journeyKey,
   ownedJourneysKey,
@@ -52,7 +56,7 @@ export function SavedJourneyDialog({
   async function submit() {
     if (guard.current) return
     setAttempted(true)
-    if (kind === 'rename' && !name.trim()) return
+    if (kind === 'rename' && journeyNameError(name)) return
     if (kind === 'rename' && name.trim() === journey.name) {
       onClose()
       return
@@ -114,8 +118,11 @@ export function SavedJourneyDialog({
             value={name}
             disabled={mutation.isPending}
             onChange={(event) => setName(event.target.value)}
+            helperText={`${name.trim().length} / ${journeyNameLimit} characters`}
             error={
-              attempted && !name.trim() ? 'Enter a journey name.' : undefined
+              attempted || name.trim().length > journeyNameLimit
+                ? journeyNameError(name)
+                : undefined
             }
           />
         ) : (

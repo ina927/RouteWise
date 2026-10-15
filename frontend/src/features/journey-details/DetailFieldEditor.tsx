@@ -1,6 +1,11 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { Button } from '../../components/ui/Button'
 import { TextInput } from '../../components/ui/TextInput'
+import {
+  journeyNameError,
+  journeyNameLimit,
+  journeyNoteLimit,
+} from '../../utils/journeyValidation'
 import styles from './JourneyDetails.module.css'
 
 export function DetailFieldEditor({
@@ -29,7 +34,13 @@ export function DetailFieldEditor({
   useEffect(() => {
     formRef.current?.querySelector<HTMLElement>('input, textarea')?.focus()
   }, [])
-  const invalid = required && attempted && !draft.trim()
+  const validationError =
+    type === 'text' && required
+      ? journeyNameError(draft)
+      : type === 'note' && draft.trim().length > journeyNoteLimit
+        ? `Note must be ${journeyNoteLimit} characters or fewer.`
+        : undefined
+  const showError = attempted || Boolean(draft.trim())
   return (
     <form
       ref={formRef}
@@ -38,7 +49,7 @@ export function DetailFieldEditor({
         event.preventDefault()
         setAttempted(true)
         const next = draft.trim()
-        if (required && !next) return
+        if (pending || validationError || (required && !next)) return
         if (next === value) {
           onCancel()
           return
@@ -57,7 +68,17 @@ export function DetailFieldEditor({
             disabled={pending}
             onChange={(event) => setDraft(event.target.value)}
             rows={2}
+            aria-invalid={Boolean(validationError)}
+            aria-describedby={`${id}-feedback`}
           />
+          <span
+            id={`${id}-feedback`}
+            className={validationError ? styles.error : undefined}
+            role={validationError ? 'alert' : undefined}
+          >
+            {validationError ??
+              `${draft.trim().length} / ${journeyNoteLimit} characters`}
+          </span>
         </label>
       ) : (
         <TextInput
@@ -67,7 +88,12 @@ export function DetailFieldEditor({
           value={draft}
           disabled={pending}
           onChange={(event) => setDraft(event.target.value)}
-          error={invalid ? 'Enter a journey name.' : undefined}
+          helperText={
+            type === 'text'
+              ? `${draft.trim().length} / ${journeyNameLimit} characters`
+              : undefined
+          }
+          error={showError ? validationError : undefined}
         />
       )}
       <div className={styles.actions}>

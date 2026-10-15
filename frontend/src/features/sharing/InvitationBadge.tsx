@@ -16,7 +16,9 @@ export function InvitationBadge({ status }: { status: InvitationStatus }) {
         ? 'Accepted'
         : status === 'pending'
           ? 'Pending'
-          : 'Declined'}
+          : status === 'removed'
+            ? 'Removed'
+            : 'Declined'}
     </Badge>
   )
 }

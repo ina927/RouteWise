@@ -337,7 +337,7 @@ public static class JourneyEndpoints
         var snapshot = JourneyMapper.ToResponse(original, "owner");
 
         var copyRequest = new CreateJourneyRequest(
-            $"{original.Name} (copy)",
+            $"{original.Name[..Math.Min(original.Name.Length, JourneyValidator.NameLimit - 7)].TrimEnd()} (copy)",
             snapshot.Date,
             snapshot.Plan,
             snapshot.Annotations);

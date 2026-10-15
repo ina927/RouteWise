@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/Button'
 import { IconButton } from '../../components/ui/IconButton'
 import { SegmentedControl } from '../../components/ui/SegmentedControl'
 import { optimizeRoute } from '../../api/routesApi'
+import { ApiError } from '../../api/httpClient'
 import type { OptimizeRouteRequest } from '../../contracts/routes'
 import type { Place } from '../../contracts/places'
 import { loadGoogle, onGoogleFailure, type PlanMarker } from './googleMaps'
@@ -16,6 +17,7 @@ import {
   canSelectPlace,
   emptyPlace,
   locationCount,
+  planningError,
   replacePlace,
   type PlaceDraft,
 } from './planning'
@@ -53,9 +55,7 @@ export function PlanJourneyPage() {
       })
       .catch(() => {
         if (active)
-          setGoogleError(
-            'Map and place search are unavailable. Please try again later.',
-          )
+          setGoogleError('Map and place search are temporarily unavailable.')
       })
     return () => {
       active = false
@@ -65,6 +65,7 @@ export function PlanJourneyPage() {
   }, [])
 
   const count = locationCount(draft)
+  const validationError = planningError(draft)
   const request = buildRequest(draft)
   const busy = mutation.isPending
   const settingsReady = Boolean(draft.travelMode && draft.objective)
@@ -312,15 +313,22 @@ export function PlanJourneyPage() {
             </EndModeSelector>
             {count > 10 && (
               <p className={styles.error} role="alert">
-                This plan has {count} locations. Remove {count - 10} location
-                {count - 10 === 1 ? '' : 's'} or change the end mode to stay
-                within 10.
+                Remove {count - 10} location{count - 10 === 1 ? '' : 's'} to
+                stay within the 10-location limit.
+              </p>
+            )}
+            {validationError && (
+              <p className={styles.error} role="alert">
+                {validationError}
               </p>
             )}
             {mutation.isError && (
               <p className={styles.error} role="alert">
-                {mutation.error.message ||
-                  'Unable to find a route. Please try again.'}
+                {mutation.error instanceof ApiError &&
+                mutation.error.status === 404
+                  ? 'Route planning is currently unavailable.'
+                  : mutation.error.message ||
+                    'Please try finding a route again.'}
               </p>
             )}
             <div>

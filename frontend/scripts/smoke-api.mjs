@@ -365,6 +365,40 @@ try {
   await assert.rejects(journeys.getJourney('journey-museum'), status(403))
   setMockViewer('user-quinn')
   assert.equal((await journeys.getJourney('journey-museum')).access, 'owner')
+  const removedInvitation = (
+    await sharing.getJourneyInvitations('journey-museum')
+  ).find((item) => item.recipient.id === 'user-river')
+  assert.equal(removedInvitation.status, 'removed')
+  const reinvited = await sharing.sendInvitation('journey-museum', {
+    recipientId: 'user-river',
+  })
+  assert.equal(reinvited.id, removedInvitation.id)
+  assert.equal(reinvited.status, 'pending')
+  assert.equal(
+    (await sharing.getJourneyInvitations('journey-museum')).filter(
+      (item) => item.recipient.id === 'user-river',
+    ).length,
+    1,
+  )
+  await assert.rejects(
+    sharing.sendInvitation('journey-museum', { recipientId: 'user-river' }),
+    status(409),
+  )
+  setMockViewer('user-river')
+  await assert.rejects(journeys.getJourney('journey-museum'), status(403))
+  assert.equal(
+    (await sharing.getIncomingInvitations()).find(
+      (item) => item.id === reinvited.id,
+    ).status,
+    'pending',
+  )
+  await sharing.respondToInvitation(reinvited.id, { status: 'accepted' })
+  assert.equal((await journeys.getJourney('journey-museum')).access, 'shared')
+  assert.ok(
+    (await sharing.getSharedJourneys()).some(
+      (item) => item.id === 'journey-museum',
+    ),
+  )
   setMockViewer('user-casey')
   assert.equal((await journeys.getJourney('journey-museum')).access, 'shared')
 

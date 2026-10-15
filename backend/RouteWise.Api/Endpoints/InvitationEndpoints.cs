@@ -87,13 +87,30 @@ public static class InvitationEndpoints
         if (recipient is null)
             return Results.NotFound(new { message = "User not found." });
 
-        // Provisional mock-compatible policy; reinvites remain a product decision.
-        // This lookup alone does not guarantee uniqueness under concurrent requests.
-        var alreadyInvited = await db.Invitations.AnyAsync(invitation =>
-            invitation.JourneyId == id && invitation.RecipientId == recipient.Id,
+        var existing = await db.Invitations.AsNoTracking().SingleOrDefaultAsync(
+            invitation => invitation.JourneyId == id && invitation.RecipientId == recipient.Id,
             cancellationToken);
-        if (alreadyInvited)
-            return Results.Conflict(new { message = "An invitation already exists for this user and journey." });
+        if (existing is not null)
+        {
+            // Reuse only a removed, previously accepted invitation. A conditional
+            // update ensures competing reinvites cannot both reset its state.
+            var updatedCount = await db.Invitations
+                .Where(invitation => invitation.Id == existing.Id &&
+                    invitation.Status == InvitationStatus.Accepted && invitation.RemovedFromShared)
+                .ExecuteUpdateAsync(updates => updates
+                    .SetProperty(invitation => invitation.Status, InvitationStatus.Pending)
+                    .SetProperty(invitation => invitation.RemovedFromShared, false), cancellationToken);
+            if (updatedCount == 0)
+                return Results.Conflict(new { message = "This user has already been invited to this journey." });
+
+            existing.Status = InvitationStatus.Pending;
+            existing.RemovedFromShared = false;
+            existing.Journey = journey;
+            existing.Sender = journey.Owner;
+            existing.Recipient = recipient;
+            return Results.Json(InvitationMapper.ToResponse(existing),
+                statusCode: StatusCodes.Status201Created);
+        }
 
         var invitation = new Invitation
         {
