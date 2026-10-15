@@ -304,7 +304,20 @@ export function PlanJourneyPage() {
             <EndModeSelector
               value={draft.endMode}
               disabled={busy}
+              fixedEndDisabled={
+                draft.endMode !== 'fixed' &&
+                1 + draft.destinations.length >= 10
+              }
               onChange={(endMode) => {
+                // prevent selecting fixed end when all 10 slots are occupied
+                if (
+                  endMode === 'fixed' &&
+                  draft.endMode !== 'fixed' &&
+                  1 + draft.destinations.length >= 10
+                ) {
+                  return
+                }
+
                 setDraft((current) => ({ ...current, endMode }))
                 mutation.reset()
               }}
