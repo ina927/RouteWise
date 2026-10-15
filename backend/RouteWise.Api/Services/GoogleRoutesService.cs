@@ -2,12 +2,13 @@
 using System.Globalization;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using RouteWise.Api.Contracts.Journeys;
 
 namespace RouteWise.Api.Services;
 
 // other classes cannot inherit, so no children
-public sealed class GoogleRoutesService
+public sealed class GoogleRoutesService : IRoutingService
 {
     private readonly HttpClient _httpClient;
     private readonly string _apiKey;
@@ -30,7 +31,7 @@ public sealed class GoogleRoutesService
     // GetCostMatrix
     // async means thí can wait for HTTP operations without blocking calling thread
     public async Task<double[,]> GetCostMatrixAsync(
-        IReadOnlyList<RoutePointDto> points, // list of route points that thí method will read only
+        IReadOnlyList<RoutePointDto> points, // list of route points, this method will read only
         string travelMode, string objective,
         CancellationToken cancellationToken = default // allows request to be cancelled e.g. if user closes the page while Google running
         )
@@ -40,11 +41,15 @@ public sealed class GoogleRoutesService
 
         // objectives can only be distance or time
         if (objective != "distance" && objective != "time")
+        {
             throw new ArgumentException("Invalid optimisation objective.");
+        }
 
-        // number of points should be between 2 to 10 inclusive
-        if (points.Count < 2 || points.Count > 10)
-            throw new ArgumentException("Expected 2 to 10 locations.");
+        // allow 10 locations plus a return visit
+        if (points.Count < 2 || points.Count > 11)
+        {
+            throw new ArgumentException("A route must contain between 2 and 11 points.");
+        }
 
         // convert RouteWise point into Google's waypoint format
         var locations = points.Select(p => ToWaypoint(p)).ToArray();
@@ -61,7 +66,9 @@ public sealed class GoogleRoutesService
 
             // ignore live traffic for predictable route costs
             // journeys are not live anyway, can be scheduled
-            routingPreference = "TRAFFIC_UNAWARE"
+            routingPreference = travelMode == "driving"
+                ? "TRAFFIC_UNAWARE"
+                : null
         };
 
         // HTTP POST request
@@ -81,7 +88,12 @@ public sealed class GoogleRoutesService
             "distanceMeters,duration");
 
         // convert anonymous object to JSON and attach to HTTP request body
-        request.Content = JsonContent.Create(body);
+        request.Content = JsonContent.Create(
+            body,
+            options: new JsonSerializerOptions
+            {
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            });
 
         // send request to Google
         // await means wait for HTTP operation to finish asynchronously
@@ -109,8 +121,20 @@ public sealed class GoogleRoutesService
             if (from < 0 || from >= points.Count ||
                 to < 0 || to >= points.Count ||
                 received[from, to])
+            {
+                throw new InvalidOperationException("Google returned an invalid matrix element.");
+            }
+
+            // Google can report an error for an individual origin/destination pair.
+            // A non-zero status code indicates that the element failed.
+            if (element.TryGetProperty("status", out var status) &&
+                status.TryGetProperty("code", out var code) &&
+                code.GetInt32() != 0)
+            {
                 throw new InvalidOperationException(
-                    "Google returned an invalid matrix element.");
+                    $"Google returned an error for locations {from} and {to}: " +
+                    status.GetRawText());
+            }
 
             if (from == to)
             {
@@ -154,8 +178,16 @@ public sealed class GoogleRoutesService
         ValidateTravelMode(travelMode);
 
         if (points.Count < 2 || points.Count > 10)
+        {
             throw new ArgumentException("Expected 2 to 10 route points.");
+        }
 
+        // Validate every location before calculating any route.
+        // This also validates consecutive points with identical coordinates.
+        foreach (var point in points)
+        {
+            ToWaypoint(point);
+        }
         var segments = new List<RouteSegmentDto>();
 
         for (int i = 0; i < points.Count - 1; i++)
@@ -185,7 +217,9 @@ public sealed class GoogleRoutesService
                 origin = ToWaypoint(from),
                 destination = ToWaypoint(to),
                 travelMode = ToGoogleTravelMode(travelMode),
-                routingPreference = "TRAFFIC_UNAWARE",
+                routingPreference = travelMode == "driving"
+                    ? "TRAFFIC_UNAWARE"
+                    : null,
                 polylineQuality = "HIGH_QUALITY",
                 polylineEncoding = "ENCODED_POLYLINE"
             };
@@ -199,7 +233,12 @@ public sealed class GoogleRoutesService
                 "X-Goog-FieldMask",
                 "routes.distanceMeters,routes.duration,routes.polyline.encodedPolyline");
 
-            request.Content = JsonContent.Create(body);
+            request.Content = JsonContent.Create(
+                body,
+                options: new JsonSerializerOptions
+                {
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                });
 
             using var response = await _httpClient.SendAsync(
                 request, cancellationToken);
@@ -213,14 +252,18 @@ public sealed class GoogleRoutesService
             var routes = document.RootElement.GetProperty("routes");
 
             if (routes.GetArrayLength() == 0)
-                throw new InvalidOperationException(
-                    "Google could not calculate this route.");
+                throw new InvalidOperationException("Google could not calculate this route.");
 
             var route = routes[0];
 
             double distance = route.GetProperty("distanceMeters").GetDouble();
             double duration = ParseDuration(
                 route.GetProperty("duration").GetString()!);
+            if (!double.IsFinite(distance) || distance < 0 ||
+                !double.IsFinite(duration) || duration < 0)
+            {
+                throw new InvalidOperationException("Google returned an invalid route distance or duration.");
+            }
 
             string encoded = route.GetProperty("polyline")
                 .GetProperty("encodedPolyline").GetString()!;
@@ -288,8 +331,12 @@ public sealed class GoogleRoutesService
                 NumberStyles.Float,
                 CultureInfo.InvariantCulture,
                 out double seconds))
-            throw new InvalidOperationException(
-                "Google returned an invalid duration.");
+            throw new InvalidOperationException("Google returned an invalid duration.");
+
+        if (!double.IsFinite(seconds) || seconds < 0)
+        {
+            throw new InvalidOperationException("Google returned an invalid duration.");
+        }
 
         return seconds;
     }

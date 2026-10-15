@@ -11,6 +11,17 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddHealthChecks();
 builder.Services.AddScoped<IJourneyService, JourneyService>();
+
+// register route optimiser
+builder.Services.AddScoped<IRouteOptimiser, SimulatedAnnealingService>();
+
+// register route planning service
+builder.Services.AddScoped<RoutePlanningService>();
+
+// Register Google Routes so other services can use it through IRoutingService.
+// AddHttpClient also manages the HttpClient used to call Google's API.
+builder.Services.AddHttpClient<IRoutingService, GoogleRoutesService>();
+
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddSingleton<MemoryTicketStore>();
 builder.Services.AddScoped<SessionCookieEvents>();
@@ -50,6 +61,7 @@ app.MapHealthChecks("/api/health");
 app.MapAuthEndpoints();
 app.MapAccountEndpoints();
 app.MapJourneyEndpoints();
+app.MapRouteEndpoints();
 app.MapUserEndpoints();
 app.MapInvitationEndpoints();
 

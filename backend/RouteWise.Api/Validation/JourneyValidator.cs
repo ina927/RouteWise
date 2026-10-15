@@ -60,12 +60,14 @@ public static class JourneyValidator
 
         if (points.Count < 2)
         {
-            return "A route must contain at least two location occurrences.";
+            return "A route must contain at least 2 location occurrences.";
         }
 
-        if (points.Count > 10)
+        // allow an extra point occurrence when returning to start
+        int maxPoints = request.Plan.EndMode == "returnToStart" ? 11 : 10;
+        if (points.Count > maxPoints)
         {
-            return "A route cannot contain more than 10 location occurrences.";
+            return $"A route cannot contain more than 10 location occurrences (or 11 if return to start).";
         }
 
         var pointIds = new HashSet<string>(StringComparer.Ordinal);
