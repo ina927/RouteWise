@@ -45,8 +45,7 @@ export function locationCount(draft: PlanningDraft): number {
   return (
     Number(Boolean(draft.start.place)) +
     draft.destinations.filter((row) => row.place).length +
-    (draft.endMode === 'fixed' ? Number(Boolean(draft.end.place)) : 0) +
-    (draft.endMode === 'returnToStart' ? Number(Boolean(draft.start.place)) : 0)
+    (draft.endMode === 'fixed' ? Number(Boolean(draft.end.place)) : 0)
   )
 }
 
@@ -54,18 +53,17 @@ export function canSelectPlace(draft: PlanningDraft, id: string): boolean {
   const row = [draft.start, ...draft.destinations, draft.end].find(
     (row) => row.id === id,
   )
+
   if (!row) return false
   if (row.place) return true
-  const cost =
-    id === draft.start.id && draft.endMode === 'returnToStart' ? 2 : 1
-  return locationCount(draft) + cost <= 10
+
+  return locationCount(draft) + 1 <= 10
 }
 
 export function canAddRow(draft: PlanningDraft): boolean {
-  // Reserve eventual endpoint slots for the active mode; empty rows themselves
-  // are not counted by locationCount or sent to the API.
-  const endpoints =
-    draft.endMode === 'fixed' || draft.endMode === 'returnToStart' ? 2 : 1
+  // reserve a slot for start and another for a fixed end
+  const endpoints = draft.endMode === 'fixed' ? 2 : 1
+
   return draft.destinations.length < 10 - endpoints && locationCount(draft) < 10
 }
 

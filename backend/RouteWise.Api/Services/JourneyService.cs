@@ -6,7 +6,7 @@ using RouteWise.Api.Models;
 
 namespace RouteWise.Api.Services;
 
-public sealed class JourneyService(RouteWiseDbContext db)
+public sealed class JourneyService(RouteWiseDbContext db) : IJourneyService
 {
     public async Task<ServiceResult<JourneyResponse>> GetAsync(
         string id,
