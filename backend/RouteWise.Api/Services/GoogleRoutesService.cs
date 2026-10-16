@@ -185,15 +185,13 @@ public sealed class GoogleRoutesService : IRoutingService
             throw new ArgumentException("A route must contain between 2 and 11 points.");
         }
 
-        // 11 points is ONLY acceptable if it's a return to start route
+        // 11 occurrences are allowed only when the route returns to its start
         if (points.Count == 11)
         {
-            var startCoords = points[0].Place.Coordinates;
-            var endCoords = points[points.Count - 1].Place.Coordinates;
-
-            if (startCoords != endCoords)
+            if (points[0].Place is null || points[^1].Place is null ||
+                points[0].Place.PlaceId != points[^1].Place.PlaceId)
             {
-                throw new ArgumentException("Maximum of 10 locations allowed for open or fixed-end routes.");
+                throw new ArgumentException("An 11-point route must return to its starting place.");
             }
         }
 
