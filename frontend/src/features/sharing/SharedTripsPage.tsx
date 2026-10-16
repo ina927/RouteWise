@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
-import { LogOut } from 'lucide-react'
+import { LayoutGrid, List, LogOut } from 'lucide-react'
 import { respondToInvitation } from '../../api/sharingApi'
 import type { Invitation } from '../../contracts/sharing'
 import type { JourneySummary } from '../../contracts/journeys'
@@ -21,7 +21,9 @@ import {
 } from './sharingData'
 import { RemoveSharedJourneyModal } from './RemoveSharedJourneyModal'
 import { InitialAvatar } from './InitialAvatar'
+import { SharedJourneyListRow } from './SharedJourneyListRow'
 import styles from './Sharing.module.css'
+import savedStyles from '../saved-journeys/SavedJourneys.module.css'
 import cardStyles from '../journeys/JourneyCards.module.css'
 
 const sharedActions = [
@@ -33,16 +35,27 @@ const sharedActions = [
   },
 ] as const
 
+type View = 'cards' | 'list'
+
 export function SharedTripsPage() {
   const navigate = useNavigate()
   const incoming = useQuery(incomingInvitationsOptions)
   const shared = useQuery(sharedJourneysOptions)
   const [removing, setRemoving] = useState<JourneySummary | null>(null)
   const [feedback, setFeedback] = useState('')
+  const [view, setView] = useState<View>(() =>
+    localStorage.getItem('routewise-shared-view') === 'list' ? 'list' : 'cards',
+  )
   const pendingHeading = useRef<HTMLHeadingElement>(null)
   const sharedHeading = useRef<HTMLHeadingElement>(null)
   const pending =
     incoming.data?.filter((item) => item.status === 'pending') ?? []
+
+  function changeView(next: View) {
+    setView(next)
+    localStorage.setItem('routewise-shared-view', next)
+  }
+
   return (
     <ProductShell activeItem="shared">
       <PageHeader
@@ -94,9 +107,35 @@ export function SharedTripsPage() {
         )}
       </section>
       <section aria-labelledby="shared-heading" className={styles.section}>
-        <h2 id="shared-heading" ref={sharedHeading} tabIndex={-1}>
-          Shared with me
-        </h2>
+        <div className={styles.sharedHeadingRow}>
+          <h2 id="shared-heading" ref={sharedHeading} tabIndex={-1}>
+            Shared with me
+          </h2>
+          <div
+            className={savedStyles.viewToggle}
+            role="group"
+            aria-label="Shared journey view"
+          >
+            <button
+              type="button"
+              className={`${savedStyles.viewButton} ${view === 'cards' ? savedStyles.activeView : ''}`}
+              aria-label="Card view"
+              aria-pressed={view === 'cards'}
+              onClick={() => changeView('cards')}
+            >
+              <LayoutGrid aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className={`${savedStyles.viewButton} ${view === 'list' ? savedStyles.activeView : ''}`}
+              aria-label="List view"
+              aria-pressed={view === 'list'}
+              onClick={() => changeView('list')}
+            >
+              <List aria-hidden="true" />
+            </button>
+          </div>
+        </div>
         <p role="status" className={styles.feedback}>
           {feedback}
         </p>
@@ -117,25 +156,36 @@ export function SharedTripsPage() {
             </Button>
           </div>
         ) : shared.data.length ? (
-          <div className={cardStyles.grid}>
-            {shared.data.map((journey) => (
-              <JourneyCardView
-                key={journey.id}
-                journey={journey}
-                sharedBy={journey.owner.username}
-                onOpen={() => {
-                  void navigate(`/journeys/${encodeURIComponent(journey.id)}`)
-                }}
-                actions={
-                  <JourneyCardMenu
-                    name={journey.name}
-                    disabled={false}
-                    actions={sharedActions}
-                    onAction={() => setRemoving(journey)}
-                  />
-                }
-              />
-            ))}
+          <div className={view === 'cards' ? cardStyles.grid : savedStyles.list}>
+            {shared.data.map((journey) =>
+              view === 'cards' ? (
+                <JourneyCardView
+                  key={journey.id}
+                  journey={journey}
+                  sharedBy={journey.owner.username}
+                  onOpen={() => {
+                    void navigate(`/journeys/${encodeURIComponent(journey.id)}`)
+                  }}
+                  actions={
+                    <JourneyCardMenu
+                      name={journey.name}
+                      disabled={false}
+                      actions={sharedActions}
+                      onAction={() => setRemoving(journey)}
+                    />
+                  }
+                />
+              ) : (
+                <SharedJourneyListRow
+                  key={journey.id}
+                  journey={journey}
+                  onOpen={() => {
+                    void navigate(`/journeys/${encodeURIComponent(journey.id)}`)
+                  }}
+                  onRemove={() => setRemoving(journey)}
+                />
+              ),
+            )}
           </div>
         ) : (
           <p className={styles.secondary}>

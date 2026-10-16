@@ -160,3 +160,15 @@
 .suggestion[aria-selected='true'] {
   background: var(--color-surface-hover);
 }
+
+.sharedHeadingRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.sharedOwner {
+  font: var(--font-body-secondary);
+  color: var(--color-text-secondary);
+}
