@@ -45,22 +45,11 @@ public sealed class GoogleRoutesService : IRoutingService
             throw new ArgumentException("Invalid optimisation objective.");
         }
 
-        // absolute baseline limits
-        if (points.Count < 2 || points.Count > 11)
+        // the matrix contains entered locations, not the return visit
+        // limit between 2 to 10 inclusive
+        if (points.Count < 2 || points.Count > 10)
         {
-            throw new ArgumentException("A route must contain between 2 and 11 points.");
-        }
-
-        // 11 points is ONLY acceptable if it's a return to start route
-        if (points.Count == 11)
-        {
-            var startCoords = points[0].Place.Coordinates;
-            var endCoords = points[points.Count - 1].Place.Coordinates;
-
-            if (startCoords != endCoords)
-            {
-                throw new ArgumentException("Maximum of 10 locations allowed for open or fixed-end routes.");
-            }
+            throw new ArgumentException("A cost matrix must contain between 2 and 10 locations.");
         }
 
         // convert RouteWise point into Google's waypoint format
