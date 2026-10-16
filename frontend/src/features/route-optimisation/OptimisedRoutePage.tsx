@@ -22,6 +22,7 @@ import { useSaveRouteChanges } from './useSaveRouteChanges'
 import { formatDistance, formatDuration } from './formatters'
 import { RouteStopList } from './components/RouteStopList'
 import { OptimisedRouteMap } from './components/OptimisedRouteMap'
+import { RouteComparison } from './components/RouteComparison'
 import styles from './OptimisedRoutePage.module.css'
 
 export function OptimisedRoutePage({ result }: { result: PlanningResult }) {
@@ -142,6 +143,15 @@ export function OptimisedRoutePage({ result }: { result: PlanningResult }) {
               </div>
             </div>
           </dl>
+
+          {result.modified && (
+            <RouteComparison
+              optimisedRoute={result.optimisedRoute}
+              currentRoute={result.currentRoute}
+              objective={result.request.objective}
+            />
+          )}
+
           <RouteStopList
             route={route}
             travelMode={result.request.travelMode}
