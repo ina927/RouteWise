@@ -21,7 +21,7 @@
   border: none;
   border-radius: var(--radius-control);
   background: transparent;
-  cursor: pointer;
+  cursor: default;
 }
 .brandIconBox {
   inline-size: 40px;
@@ -45,13 +45,6 @@
   line-height: 1.2;
   text-align: center;
   white-space: nowrap;
-}
-.brand:hover {
-  background: var(--color-surface-hover);
-}
-.brand:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
 }
 .navigation {
   display: flex;
