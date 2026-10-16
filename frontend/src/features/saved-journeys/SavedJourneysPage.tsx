@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
-import { Plus } from 'lucide-react'
+import { LayoutGrid, List, Plus } from 'lucide-react'
 import { duplicateJourney, getOwnedJourneys } from '../../api/journeysApi'
 import type { JourneySummary } from '../../contracts/journeys'
 import { ProductShell } from '../../app/ProductShell'
@@ -11,6 +11,7 @@ import { SearchInput } from '../../components/ui/SearchInput'
 import { Select } from '../../components/ui/Select'
 import { cacheJourney, ownedJourneysKey } from '../journey-details/journeyData'
 import { JourneyCard } from './JourneyCard'
+import { JourneyListRow } from './JourneyListRow'
 import { SavedJourneyDialog } from './SavedJourneyDialog'
 import type { CardAction } from './CardActions'
 import styles from './SavedJourneys.module.css'
@@ -20,7 +21,10 @@ const names = new Intl.Collator(undefined, {
   sensitivity: 'base',
   numeric: true,
 })
+
 type Sort = 'name' | 'newest' | 'oldest'
+type View = 'cards' | 'list'
+
 function compare(a: JourneySummary, b: JourneySummary, sort: Sort) {
   if (sort !== 'name') {
     if (!a.date && b.date) return 1
@@ -41,6 +45,16 @@ export function SavedJourneysPage() {
   })
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<Sort>('name')
+
+  const [view, setView] = useState<View>(() =>
+    localStorage.getItem('routewise-saved-view') === 'list' ? 'list' : 'cards',
+  )
+
+  function changeView(next: View) {
+    setView(next)
+    localStorage.setItem('routewise-saved-view', next)
+  }
+
   const [dialog, setDialog] = useState<{
     kind: 'rename' | 'delete'
     journey: JourneySummary
@@ -128,6 +142,27 @@ export function SavedJourneysPage() {
           <option value="newest">Date newest</option>
           <option value="oldest">Date oldest</option>
         </Select>
+
+        <div className={styles.viewToggle} role="group" aria-label="Journey view">
+          <button
+            type="button"
+            className={`${styles.viewButton} ${view === 'cards' ? styles.activeView : ''}`}
+            aria-label="Card view"
+            aria-pressed={view === 'cards'}
+            onClick={() => changeView('cards')}
+          >
+            <LayoutGrid aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            className={`${styles.viewButton} ${view === 'list' ? styles.activeView : ''}`}
+            aria-label="List view"
+            aria-pressed={view === 'list'}
+            onClick={() => changeView('list')}
+          >
+            <List aria-hidden="true" />
+          </button>
+        </div>
       </div>
       <p role="status" className={styles.feedback}>
         {feedback?.message ?? ''}
@@ -163,21 +198,26 @@ export function SavedJourneysPage() {
           </Button>
         </section>
       ) : (
-        <div className={cardStyles.grid}>
-          {journeys.map((journey) => (
-            <JourneyCard
-              key={journey.id}
-              journey={journey}
-              busy={busyIds.includes(journey.id)}
-              error={errors[journey.id]}
-              onOpen={() => {
+        <div className={view === 'cards' ? cardStyles.grid : styles.list}>
+          {journeys.map((journey) => {
+            const props = {
+              journey,
+              busy: busyIds.includes(journey.id),
+              error: errors[journey.id],
+              onOpen: () => {
                 void navigate(`/journeys/${encodeURIComponent(journey.id)}`)
-              }}
-              onAction={(choice) => {
+              },
+              onAction: (choice: CardAction) => {
                 void action(journey, choice)
-              }}
-            />
-          ))}
+              },
+            }
+
+            return view === 'cards' ? (
+              <JourneyCard key={journey.id} {...props} />
+            ) : (
+              <JourneyListRow key={journey.id} {...props} />
+            )
+          })}
         </div>
       )}
       {dialog && (
