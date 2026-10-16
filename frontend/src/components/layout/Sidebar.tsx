@@ -26,16 +26,21 @@ export function Sidebar({
 }: SidebarProps) {
   return (
     <aside className={styles.sidebar}>
-      <div className={styles.brand}>
-        <div className={styles.brandIconBox}>
+      <button
+        type="button"
+        className={styles.brand}
+        aria-label="RouteWise home"
+        onClick={() => onNavigate('plan')}
+      >
+        <span className={styles.brandIconBox}>
           <img
             src={routeWiseIcon}
             alt=""
             className={styles.brandIcon}
           />
-        </div>
+        </span>
         <span className={styles.brandText}>RouteWise</span>
-      </div>
+      </button>
       <nav aria-label="Main navigation" className={styles.navigation}>
         <ul className={styles.list}>
           {destinations.map(({ id, label, icon: Icon }) => (

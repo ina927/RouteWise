@@ -51,7 +51,7 @@
   --font-size-md: 1rem;
   --font-size-lg: 1.25rem;
   --font-size-xl: 1.5rem;
-  --font-size-2xl: 2rem;
+  --font-size-2xl: 1.75rem;
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
@@ -110,9 +110,9 @@
   --focus-ring-width: 3px;
   --focus-ring-offset: 3px;
 
-  --layout-sidebar-width: 6.5rem;
-  --layout-page-gutter: clamp(var(--space-6), 2.5vw, var(--space-8));
-  --layout-section-gap: var(--space-6);
+  --layout-sidebar-width: 5.75rem;
+  --layout-page-gutter: clamp(var(--space-4), 2vw, var(--space-6));
+  --layout-section-gap: var(--space-4);
 
   --duration-fast: 120ms;
   --duration-normal: 180ms;

@@ -3,10 +3,10 @@
   inset-block-start: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--space-4);
   block-size: 100dvh;
   overflow-y: auto;
-  padding: var(--space-6) var(--space-3);
+  padding: var(--space-4) var(--space-2);
   border-inline-end: var(--border-width) solid var(--color-border);
   background: var(--color-surface);
 }
@@ -18,6 +18,10 @@
   gap: var(--space-2);
   inline-size: 100%;
   min-width: 0;
+  border: none;
+  border-radius: var(--radius-control);
+  background: transparent;
+  cursor: pointer;
 }
 .brandIconBox {
   inline-size: 40px;
@@ -42,6 +46,13 @@
   text-align: center;
   white-space: nowrap;
 }
+.brand:hover {
+  background: var(--color-surface-hover);
+}
+.brand:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
 .navigation {
   display: flex;
   flex: 1;
@@ -63,10 +74,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-1);
   inline-size: 100%;
   min-block-size: var(--control-height-default);
-  padding: var(--space-3) var(--space-1);
+  padding: var(--space-2) var(--space-1);
   border: var(--border-width-emphasis) solid transparent;
   border-radius: var(--radius-control);
   background: transparent;
