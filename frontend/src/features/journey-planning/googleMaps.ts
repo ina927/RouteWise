@@ -389,11 +389,48 @@ async function createMapScene(
     solid: css.getPropertyValue('--color-text-on-solid').trim(),
     primary: css.getPropertyValue('--color-primary').trim(),
     route: css.getPropertyValue('--color-route').trim(),
+    start: css.getPropertyValue('--color-route-start').trim(),
+    end: css.getPropertyValue('--color-route-end').trim(),
+  }
+  function styleMarker(
+    marker: Marker,
+    role: PlanMarker['role'],
+    number?: number,
+    label?: string,
+  ) {
+    const content = document.createElement('div')
+    content.style.cssText =
+      'position: relative; display: flex; justify-content: center;'
+    const glyph =
+      role === 'start'
+        ? 'S'
+        : role === 'end'
+          ? 'E'
+          : number === undefined
+            ? undefined
+            : String(number)
+    content.append(
+      new markersLibrary.PinElement({
+        background: role === 'intermediate' ? colours.primary : colours[role],
+        borderColor: colours.solid,
+        glyphColor: colours.solid,
+        ...(glyph === undefined ? {} : { glyphText: glyph }),
+      }),
+    )
+    if (role !== 'intermediate' && label) {
+      const caption = document.createElement('span')
+      caption.textContent = label
+      caption.style.cssText =
+        'position: absolute; top: 100%; white-space: nowrap; padding: 2px 6px; border-radius: 4px; background: var(--color-surface); color: var(--color-text); font: var(--font-caption); box-shadow: var(--shadow-subtle);'
+      content.append(caption)
+    }
+    marker.replaceChildren(content)
   }
   return {
     map,
     maps,
     colours,
+    styleMarker,
     fit(points: Coordinates[]) {
       coordinates = points
       fit()
@@ -401,22 +438,16 @@ async function createMapScene(
     marker(
       position: Coordinates,
       title: string,
-      intermediate: boolean,
+      role: PlanMarker['role'],
       number?: number,
+      label?: string,
     ) {
       const marker = new markersLibrary.AdvancedMarkerElement({
         map,
         position,
         title,
       })
-      marker.append(
-        new markersLibrary.PinElement({
-          background: intermediate ? colours.primary : colours.route,
-          borderColor: colours.solid,
-          glyphColor: colours.solid,
-          ...(number === undefined ? {} : { glyphText: String(number) }),
-        }),
-      )
+      styleMarker(marker, role, number, label)
       return marker
     },
     dispose() {
@@ -507,11 +538,14 @@ export async function createPlanMap(
           existing.point = point
           existing.marker.position = point.place.coordinates
           existing.marker.title = title
+          scene.styleMarker(existing.marker, point.role, undefined, point.label)
         } else {
           const marker = scene.marker(
             point.place.coordinates,
             title,
-            point.role === 'intermediate',
+            point.role,
+            undefined,
+            point.label,
           )
           marker.gmpClickable = true
           const onClick = () => show(point.id, true)
@@ -600,8 +634,9 @@ export async function createRouteMap(
       const sharedEndpoint =
         first &&
         last &&
-        first.place.coordinates.lat === last.place.coordinates.lat &&
-        first.place.coordinates.lng === last.place.coordinates.lng
+        (first.place.placeId === last.place.placeId ||
+          (first.place.coordinates.lat === last.place.coordinates.lat &&
+            first.place.coordinates.lng === last.place.coordinates.lng))
       markers = route.points.flatMap((point, index) => {
         // The list retains both occurrences; co-located endpoints share one visible pin.
         if (sharedEndpoint && index === route.points.length - 1) return []
@@ -617,8 +652,9 @@ export async function createRouteMap(
           scene.marker(
             point.place.coordinates,
             `${label}: ${point.place.name}`,
-            intermediate,
+            intermediate ? 'intermediate' : index === 0 ? 'start' : 'end',
             intermediate ? index : undefined,
+            label,
           ),
         ]
       })

@@ -15,16 +15,22 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Car, Footprints, GripHorizontal, MapPin } from 'lucide-react'
+import { Car, Footprints, GripHorizontal } from 'lucide-react'
+import { EndpointPin } from '../../../components/ui/EndpointPin'
 import { IconButton } from '../../../components/ui/IconButton'
 import type { RoutePoint } from '../../../contracts/places'
-import type { RouteResult, TravelMode } from '../../../contracts/routes'
+import type {
+  EndMode,
+  RouteResult,
+  TravelMode,
+} from '../../../contracts/routes'
 import { formatDistance, formatDuration } from '../formatters'
 import styles from './RouteStopList.module.css'
 
 type Props = {
   route: RouteResult
   travelMode: TravelMode
+  endMode: EndMode
   disabled: boolean
   hoveredSegmentId: string | null
   selectedSegmentId: string | null
@@ -41,13 +47,16 @@ function StopContent({
 }: {
   point: RoutePoint
   number?: number
-  endpoint?: 'Start' | 'End'
+  endpoint?: 'Start' | 'End' | 'Return to start'
   handle?: ReactNode
 }) {
   return (
     <div className={styles.stop}>
       {endpoint ? (
-        <MapPin className={styles.endpoint} aria-hidden="true" />
+        <EndpointPin
+          role={endpoint === 'End' ? 'end' : 'start'}
+          className={styles.endpoint}
+        />
       ) : (
         <span className={styles.number} aria-label={`Stop ${number}`}>
           {number}
@@ -110,6 +119,7 @@ function SortableStop({
 export function RouteStopList({
   route,
   travelMode,
+  endMode,
   disabled,
   hoveredSegmentId,
   selectedSegmentId,
@@ -165,7 +175,13 @@ export function RouteStopList({
                   {index === 0 || index === route.points.length - 1 ? (
                     <StopContent
                       point={point}
-                      endpoint={index === 0 ? 'Start' : 'End'}
+                      endpoint={
+                        index === 0
+                          ? 'Start'
+                          : endMode === 'returnToStart'
+                            ? 'Return to start'
+                            : 'End'
+                      }
                     />
                   ) : (
                     <SortableStop

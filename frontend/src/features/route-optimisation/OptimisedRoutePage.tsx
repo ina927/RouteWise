@@ -145,16 +145,30 @@ export function OptimisedRoutePage({ result }: { result: PlanningResult }) {
           </dl>
 
           {result.modified && (
-            <RouteComparison
-              optimisedRoute={result.optimisedRoute}
-              currentRoute={result.currentRoute}
-              objective={result.request.objective}
-            />
+            <>
+              <RouteComparison
+                optimisedRoute={result.optimisedRoute}
+                currentRoute={result.currentRoute}
+                objective={result.request.objective}
+              />
+              <div className={styles.modified}>
+                <Badge tone="info">Modified route</Badge>
+                <Button
+                  variant="ghost"
+                  leadingIcon={RotateCcw}
+                  disabled={Boolean(updates.pending) || saveChanges.pending}
+                  onClick={updates.reset}
+                >
+                  Reset to optimised route
+                </Button>
+              </div>
+            </>
           )}
 
           <RouteStopList
             route={route}
             travelMode={result.request.travelMode}
+            endMode={result.request.endMode}
             disabled={Boolean(updates.pending) || saveChanges.pending}
             hoveredSegmentId={interaction.hovered}
             selectedSegmentId={interaction.selected}
@@ -171,19 +185,6 @@ export function OptimisedRoutePage({ result }: { result: PlanningResult }) {
               void updates.reorder(points)
             }}
           />
-          {result.modified && (
-            <div className={styles.modified}>
-              <Badge tone="info">Modified route</Badge>
-              <Button
-                variant="ghost"
-                leadingIcon={RotateCcw}
-                disabled={Boolean(updates.pending) || saveChanges.pending}
-                onClick={updates.reset}
-              >
-                Reset to optimised route
-              </Button>
-            </div>
-          )}
           <Button
             leadingIcon={Bookmark}
             className={styles.save}

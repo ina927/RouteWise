@@ -1,5 +1,6 @@
 import { useId, type ReactNode } from 'react'
 import { MapPin, RotateCcw, Route } from 'lucide-react'
+import { EndpointPin } from '../../../components/ui/EndpointPin'
 import type { EndMode } from '../../../contracts/routes'
 import styles from './EndModeSelector.module.css'
 
@@ -71,10 +72,11 @@ export function EndModeSelector({
                   }}
                 />
 
-                <Icon
-                  aria-hidden="true"
-                  className={option === 'fixed' ? styles.endpoint : undefined}
-                />
+                {option === 'open' ? (
+                  <Icon aria-hidden="true" />
+                ) : (
+                  <EndpointPin role={option === 'fixed' ? 'end' : 'start'} />
+                )}
 
                 <span>
                   <span className={styles.title}>{label}</span>

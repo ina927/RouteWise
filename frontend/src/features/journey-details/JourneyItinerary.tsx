@@ -1,4 +1,5 @@
-import { Car, Clock, Footprints, MapPin, Plus, StickyNote } from 'lucide-react'
+import { Car, Clock, Footprints, Plus, StickyNote } from 'lucide-react'
+import { EndpointPin } from '../../components/ui/EndpointPin'
 import type { Journey } from '../../contracts/journeys'
 import { Button } from '../../components/ui/Button'
 import { DetailFieldEditor } from './DetailFieldEditor'
@@ -42,7 +43,9 @@ export function JourneyItinerary({
           index === 0
             ? 'Start'
             : index === points.length - 1
-              ? 'End'
+              ? journey.plan.endMode === 'returnToStart'
+                ? 'Return to start'
+                : 'End'
               : `Stop ${index}`
         const annotation = journey.annotations.find(
           (item) => item.pointId === point.id,
@@ -83,7 +86,11 @@ export function JourneyItinerary({
               className={`${styles.stop} ${endpoint ? styles.endpoint : ''}`}
             >
               <span className={styles.marker} aria-label={role}>
-                {endpoint ? <MapPin aria-hidden="true" /> : index}
+                {endpoint ? (
+                  <EndpointPin role={role === 'End' ? 'end' : 'start'} />
+                ) : (
+                  index
+                )}
               </span>
               {!endpoint && !compact && (
                 <PlacePhoto key={point.place.placeId} place={point.place} />

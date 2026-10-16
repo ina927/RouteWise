@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
-import { Car, Clock, Footprints, MapPin, Plus, Route, X } from 'lucide-react'
+import { Car, Clock, Footprints, Plus, Route, X } from 'lucide-react'
+import { EndpointPin } from '../../components/ui/EndpointPin'
 import { PageHeader } from '../../components/layout/PageHeader'
 import { Button } from '../../components/ui/Button'
 import { IconButton } from '../../components/ui/IconButton'
@@ -76,10 +77,7 @@ export function PlanJourneyPage() {
             id: draft.start.id,
             place: draft.start.place,
             role: 'start' as const,
-            label:
-              draft.endMode === 'returnToStart'
-                ? 'Start / Return to start'
-                : 'Start',
+            label: draft.endMode === 'returnToStart' ? 'Start / End' : 'Start',
           },
         ]
       : []),
@@ -101,7 +99,7 @@ export function PlanJourneyPage() {
             id: draft.end.id,
             place: draft.end.place,
             role: 'end' as const,
-            label: 'Fixed end',
+            label: 'End',
           },
         ]
       : []),
@@ -221,7 +219,7 @@ export function PlanJourneyPage() {
                 Start
               </h2>
               <div className={styles.startRow}>
-                <MapPin className={styles.endpoint} aria-hidden="true" />
+                <EndpointPin role="start" className={styles.endpoint} />
                 {field(draft.start, 'Start place')}
               </div>
             </section>
@@ -305,8 +303,7 @@ export function PlanJourneyPage() {
               value={draft.endMode}
               disabled={busy}
               fixedEndDisabled={
-                draft.endMode !== 'fixed' &&
-                1 + draft.destinations.length >= 10
+                draft.endMode !== 'fixed' && 1 + draft.destinations.length >= 10
               }
               onChange={(endMode) => {
                 // prevent selecting fixed end when all 10 slots are occupied
