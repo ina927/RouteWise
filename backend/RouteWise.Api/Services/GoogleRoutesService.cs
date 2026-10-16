@@ -45,14 +45,27 @@ public sealed class GoogleRoutesService : IRoutingService
             throw new ArgumentException("Invalid optimisation objective.");
         }
 
-        // allow 10 locations plus a return visit
+        // absolute baseline limits
         if (points.Count < 2 || points.Count > 11)
         {
             throw new ArgumentException("A route must contain between 2 and 11 points.");
         }
 
+        // 11 points is ONLY acceptable if it's a return to start route
+        if (points.Count == 11)
+        {
+            var startCoords = points[0].Place.Coordinates;
+            var endCoords = points[points.Count - 1].Place.Coordinates;
+
+            if (startCoords != endCoords)
+            {
+                throw new ArgumentException("Maximum of 10 locations allowed for open or fixed-end routes.");
+            }
+        }
+
         // convert RouteWise point into Google's waypoint format
         var locations = points.Select(p => ToWaypoint(p)).ToArray();
+
 
         // anonymous object to convert to JSON when sending request
         // request all pairs for matrix
@@ -177,10 +190,24 @@ public sealed class GoogleRoutesService : IRoutingService
     {
         ValidateTravelMode(travelMode);
 
-        if (points.Count < 2 || points.Count > 10)
+        // absolute baseline limits
+        if (points.Count < 2 || points.Count > 11)
         {
-            throw new ArgumentException("Expected 2 to 10 route points.");
+            throw new ArgumentException("A route must contain between 2 and 11 points.");
         }
+
+        // 11 points is ONLY acceptable if it's a return to start route
+        if (points.Count == 11)
+        {
+            var startCoords = points[0].Place.Coordinates;
+            var endCoords = points[points.Count - 1].Place.Coordinates;
+
+            if (startCoords != endCoords)
+            {
+                throw new ArgumentException("Maximum of 10 locations allowed for open or fixed-end routes.");
+            }
+        }
+
 
         // Validate every location before calculating any route.
         // This also validates consecutive points with identical coordinates.
