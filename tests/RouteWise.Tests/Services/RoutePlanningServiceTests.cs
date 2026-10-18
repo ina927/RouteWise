@@ -9,13 +9,16 @@ namespace RouteWise.Tests.Services;
 [TestFixture]
 public class RoutePlanningServiceTests
 {
-    private FakeRoutingService _routing = null!;
-    private FakeOptimiser _optimiser = null!;
-    private RoutePlanningService _service = null!;
+    private FakeRoutingService _routing = null!; // replacement for GoogleRoutesService
+    private FakeOptimiser _optimiser = null!; // replacement for SimulatedAnnealingService
+    private RoutePlanningService _service = null!; // the RoutePlanningService being tested
 
     [SetUp]
     public void SetUp()
     {
+        // need fake routing service and fake optimiser because we are testing the planning service
+        // not testing individual routing service (Google) or optimiser (Simulated Annealing)
+
         // create fake dependencies
         _routing = new FakeRoutingService();
         _optimiser = new FakeOptimiser();
@@ -24,6 +27,7 @@ public class RoutePlanningServiceTests
         _service = new RoutePlanningService(_routing, _optimiser);
     }
 
+    // sample location
     private static RoutePointDto Point(int number)
     {
         return new RoutePointDto(
@@ -32,10 +36,12 @@ public class RoutePlanningServiceTests
                 $"place-{number}",
                 $"Location {number}",
                 null,
-                new CoordinatesDto(-33.8 + number * 0.01, 151.2)));
+                new CoordinatesDto(-33.8 + number * 0.01, 151.2))); // -33.8 and 151.2 are latitude and longitude around Sydney
     }
 
+    // sample request
     private static OptimizeRouteRequest Request(
+        // default setting
         string endMode = "open",
         int destinationCount = 2,
         string objective = "distance",
@@ -59,8 +65,11 @@ public class RoutePlanningServiceTests
     public async Task OpenRoute_UsesUnfixedEnd()
     {
         // optimise an open route
+        // Request() uses the defaults
         await _service.OptimiseAsync(Request());
 
+        // open route should have no fixed and and not return to start
+        // optimiser should of course be called
         Assert.Multiple(() =>
         {
             Assert.That(_optimiser.Called, Is.True);
@@ -75,6 +84,7 @@ public class RoutePlanningServiceTests
         // optimise a route with a fixed end
         var result = await _service.OptimiseAsync(Request("fixed"));
 
+        // fixed end with 3 points so point-3 should be the last point
         Assert.Multiple(() =>
         {
             Assert.That(_optimiser.FixedEnd, Is.True);
@@ -89,6 +99,7 @@ public class RoutePlanningServiceTests
         // optimise a return-to-start route
         var result = await _service.OptimiseAsync(Request("returnToStart"));
 
+        // return to start so last point should be the same as first point
         Assert.Multiple(() =>
         {
             Assert.That(_optimiser.ReturnToStart, Is.True);
@@ -102,10 +113,11 @@ public class RoutePlanningServiceTests
     [Test]
     public async Task ReturnToStart_TenLocationsProducesElevenPoints()
     {
-        // use 10 entered locations
+        // use 10 entered locations including 1 start and 9 intermediate
         var result = await _service.OptimiseAsync(
             Request("returnToStart", destinationCount: 9));
 
+        // 10 distinct points in matrix but 11 point occurrences
         Assert.Multiple(() =>
         {
             Assert.That(_routing.MatrixPointCount, Is.EqualTo(10));
@@ -141,6 +153,7 @@ public class RoutePlanningServiceTests
     public async Task CalculateRoute_PreservesEnteredOrder()
     {
         // calculate without optimisation
+        // entered order should be preserved after user manually chooses
         var points = new List<RoutePointDto>
         {
             Point(2),
