@@ -1,4 +1,3 @@
-
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -12,7 +11,8 @@ namespace RouteWise.Tests.Services;
 [TestFixture]
 public class GoogleRoutesServiceTests
 {
-    // 2 example locations used throughout the tests.
+    // 2 example locations used throughout the tests
+    // not real route measurements
     private static List<RoutePointDto> CreatePoints()
     {
         return new List<RoutePointDto>
@@ -21,24 +21,31 @@ public class GoogleRoutesServiceTests
                 "start",
                 new PlaceDto(
                     "place-a",
-                    "Location A",
+                    "UTS Tower",
                     null,
-                    new CoordinatesDto(-33.86, 151.20))),
+                    new CoordinatesDto(-33.8836, 151.2008))),
 
             new(
                 "end",
                 new PlaceDto(
                     "place-b",
-                    "Location B",
+                    "Bondi Beach",
                     null,
-                    new CoordinatesDto(-33.87, 151.21)))
+                    new CoordinatesDto(-33.8915, 151.2767)))
         };
     }
 
     // a successful 2 x 2 Google Route Matrix response
+    // distance (m)
     //        A      B
-    // A      0    1500
-    // B   1700       0
+    // A      0    8100
+    // B   9200       0
+    // time (s)
+    //        A      B
+    // A      0     960
+    // B   1020       0
+    // 2 directions have different costs to test an asymmetric matrix
+    // should not assume that the 2 directions have the same cost due to road restrictions
     private const string MatrixResponse = """
         [
           {
@@ -52,15 +59,15 @@ public class GoogleRoutesServiceTests
             "originIndex": 0,
             "destinationIndex": 1,
             "condition": "ROUTE_EXISTS",
-            "distanceMeters": 1500,
-            "duration": "300s"
+            "distanceMeters": 8100,
+            "duration": "960s"
           },
           {
             "originIndex": 1,
             "destinationIndex": 0,
             "condition": "ROUTE_EXISTS",
-            "distanceMeters": 1700,
-            "duration": "360s"
+            "distanceMeters": 9200,
+            "duration": "1020s"
           },
           {
             "originIndex": 1,
@@ -72,14 +79,14 @@ public class GoogleRoutesServiceTests
         ]
         """;
 
-    // Example response for Google's Compute Routes API.
-    // The encoded polyline is a standard example with 3 points
+    // Example response for Google's Compute Routes API test for distance, duration, and polyline parsing
+    // The encoded polyline is a standard example with 3 points, not a real route
     private const string RouteResponse = """
         {
           "routes": [
             {
-              "distanceMeters": 1500,
-              "duration": "300s",
+              "distanceMeters": 8100,
+              "duration": "960s",
               "polyline": {
                 "encodedPolyline": "_p~iF~ps|U_ulLnnqC_mqNvxq`@"
               }
@@ -89,7 +96,8 @@ public class GoogleRoutesServiceTests
         """;
 
     // Build a real GoogleRoutesService but replace its HTTP connection with our fake handler
-    // The fake API key is only used in unit tests.
+    // The fake API key is only used in unit tests
+    // each test controls API response without contacting Google with a real key
     private static GoogleRoutesService CreateService(
         Func<HttpRequestMessage, Task<HttpResponseMessage>> responder)
     {
@@ -112,11 +120,13 @@ public class GoogleRoutesServiceTests
     // No actual network connection is made.
     private sealed class FakeHttpMessageHandler : HttpMessageHandler
     {
-        private readonly Func<HttpRequestMessage,
+        private readonly Func<
+            HttpRequestMessage,
             Task<HttpResponseMessage>> _responder;
 
         public FakeHttpMessageHandler(
-            Func<HttpRequestMessage,
+            Func<
+                HttpRequestMessage,
                 Task<HttpResponseMessage>> responder)
         {
             _responder = responder;
@@ -144,7 +154,7 @@ public class GoogleRoutesServiceTests
         };
     }
 
-    // A distance objective should return distanceMeters.
+    // A distance objective should return distanceMeters
     [Test]
     public async Task GetCostMatrix_Distance_ReturnsDistances()
     {
@@ -165,8 +175,8 @@ public class GoogleRoutesServiceTests
         Assert.Multiple(() =>
         {
             Assert.That(matrix[0, 0], Is.EqualTo(0));
-            Assert.That(matrix[0, 1], Is.EqualTo(1500));
-            Assert.That(matrix[1, 0], Is.EqualTo(1700));
+            Assert.That(matrix[0, 1], Is.EqualTo(8100));
+            Assert.That(matrix[1, 0], Is.EqualTo(9200));
             Assert.That(matrix[1, 1], Is.EqualTo(0));
         });
     }
@@ -183,11 +193,11 @@ public class GoogleRoutesServiceTests
             "walking",
             "time");
 
-        Assert.That(matrix[0, 1], Is.EqualTo(300));
-        Assert.That(matrix[1, 0], Is.EqualTo(360));
+        Assert.That(matrix[0, 1], Is.EqualTo(960));
+        Assert.That(matrix[1, 0], Is.EqualTo(1020));
     }
 
-    // Walking must use WALK and omit routingPreference.
+    // Walking must use WALK and omit routingPreference as it's driving-specific
     [Test]
     public async Task GetCostMatrix_Walking_OmitsRoutingPreference()
     {
@@ -216,7 +226,7 @@ public class GoogleRoutesServiceTests
             "routingPreference", out _), Is.False);
     }
 
-    // Driving must use DRIVE and routingPreference TRAFFIC_UNAWARE.
+    // Driving must use DRIVE and routingPreference TRAFFIC_UNAWARE
     [Test]
     public async Task GetCostMatrix_Driving_UsesTrafficUnaware()
     {
@@ -251,7 +261,7 @@ public class GoogleRoutesServiceTests
     public void GetCostMatrix_InvalidTravelMode_Throws()
     {
         var service = CreateService(request =>
-            throw new Exception("HTTP should not be called."));
+            throw new InvalidOperationException("HTTP should not be called."));
 
         Assert.ThrowsAsync<ArgumentException>(async () =>
             await service.GetCostMatrixAsync(
@@ -265,7 +275,7 @@ public class GoogleRoutesServiceTests
     public void GetCostMatrix_InvalidObjective_Throws()
     {
         var service = CreateService(request =>
-            throw new Exception("HTTP should not be called."));
+            throw new InvalidOperationException("HTTP should not be called."));
 
         Assert.ThrowsAsync<ArgumentException>(async () =>
             await service.GetCostMatrixAsync(
@@ -343,13 +353,13 @@ public class GoogleRoutesServiceTests
         {
             Assert.That(segment.FromPointId, Is.EqualTo("start"));
             Assert.That(segment.ToPointId, Is.EqualTo("end"));
-            Assert.That(segment.DistanceMeters, Is.EqualTo(1500));
-            Assert.That(segment.DurationSeconds, Is.EqualTo(300));
+            Assert.That(segment.DistanceMeters, Is.EqualTo(8100));
+            Assert.That(segment.DurationSeconds, Is.EqualTo(960));
             Assert.That(segment.Path, Has.Count.EqualTo(3));
         });
     }
 
-    // Walking requests to Compute Routes must omit routingPreference.
+    // Walking requests to Compute Routes must omit routingPreference as it's driving-specific
     [Test]
     public async Task CalculateRoute_Walking_OmitsRoutingPreference()
     {
@@ -389,12 +399,12 @@ public class GoogleRoutesServiceTests
             "end",
             new PlaceDto(
                 "place-b",
-                "Location B",
+                "Bondi Beach",
                 null,
                 points[0].Place.Coordinates));
 
         var service = CreateService(request =>
-            throw new Exception("HTTP should not be called."));
+            throw new InvalidOperationException("HTTP should not be called."));
 
         var result = await service.CalculateRouteAsync(
             points,
